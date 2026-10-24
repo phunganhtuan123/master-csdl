@@ -1,0 +1,18 @@
+digraph FLOW {
+  graph [rankdir=TB, fontname="Helvetica", bgcolor="white", nodesep=0.4, ranksep=0.45, pad=0.3];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, fillcolor="#f8f8f8", color="#777777"];
+  edge  [fontname="Helvetica", fontsize=10, color="#555555"];
+  a [label="POST /api/orders\n{customer, items}", fillcolor="#e6eefb", color="#2b5fa8"];
+  b [label="SELECT * FROM place_order($1,$2,$3)\n= 1 transaction"];
+  c [label="(1) INSERT customers … ON CONFLICT (phone) DO UPDATE"];
+  d [label="(2) SELECT … FROM products\nWHERE id = ANY(items) ORDER BY id\nFOR UPDATE", fillcolor="#fff3d6", color="#b8902e"];
+  e [shape=diamond, label="stock ≥ qty\nvới mọi sản phẩm?", fillcolor="#ffffff"];
+  f [label="RAISE EXCEPTION 'OUT_OF_STOCK'\n→ ROLLBACK, HTTP 409", fillcolor="#fde8e8", color="#b23b3b"];
+  g [label="(3) INSERT orders (total = generated)\n(4) INSERT order_items (giá tại thời điểm mua)"];
+  h [label="(5) UPDATE products SET stock = stock - qty\nINSERT stock_movements"];
+  i [label="Trigger: stock < 3 → pg_notify('low_stock')\nTrigger: pg_notify('new_order')", fillcolor="#e6f4ec", color="#2e7d4f"];
+  j [label="COMMIT → trả order_id, total", fillcolor="#e6eefb", color="#2b5fa8"];
+  a -> b -> c -> d -> e; e -> f [label="không"]; e -> g [label="có"]; g -> h -> i -> j;
+  k [label="Giao dịch thứ 2 mua cùng sản phẩm\nphải CHỜ ở bước (2) đến khi giao dịch 1 COMMIT,\nsau đó đọc stock đã trừ → OUT_OF_STOCK", shape=note, fillcolor="#fffbe6", color="#b8902e"];
+  d -> k [style=dashed, arrowhead=none];
+}

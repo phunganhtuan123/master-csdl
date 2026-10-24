@@ -1,0 +1,93 @@
+digraph ERD {
+  graph [rankdir=LR, splines=ortho, nodesep=0.6, ranksep=1.1, fontname="Helvetica", bgcolor="white", pad=0.3];
+  node  [shape=plain, fontname="Helvetica", fontsize=11];
+  edge  [fontname="Helvetica", fontsize=9, color="#555555", arrowhead=none, arrowtail=crow, dir=both, penwidth=1.2];
+
+  categories [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#b8902e" COLSPAN="2"><FONT COLOR="white"><B>categories</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">serial</TD></TR>
+<TR><TD ALIGN="LEFT">slug UQ</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT">parent_id FK</TD><TD ALIGN="LEFT">int</TD></TR>
+</TABLE>>];
+
+  products [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#b8902e" COLSPAN="2"><FONT COLOR="white"><B>products</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">bigserial</TD></TR>
+<TR><TD ALIGN="LEFT">sku UQ · slug UQ</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT">category_id FK</TD><TD ALIGN="LEFT">int</TD></TR>
+<TR><TD ALIGN="LEFT">price</TD><TD ALIGN="LEFT">numeric(14,0)</TD></TR>
+<TR><TD ALIGN="LEFT">stock  CHECK ≥ 0</TD><TD ALIGN="LEFT">int</TD></TR>
+<TR><TD ALIGN="LEFT" BGCOLOR="#fff3d6">attributes</TD><TD ALIGN="LEFT" BGCOLOR="#fff3d6"><B>jsonb</B></TD></TR>
+<TR><TD ALIGN="LEFT">description · image_url · status</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT" BGCOLOR="#fff3d6">embedding</TD><TD ALIGN="LEFT" BGCOLOR="#fff3d6"><B>vector(256)</B></TD></TR>
+<TR><TD ALIGN="LEFT" BGCOLOR="#fff3d6">search_vec (generated)</TD><TD ALIGN="LEFT" BGCOLOR="#fff3d6"><B>tsvector</B></TD></TR>
+<TR><TD ALIGN="LEFT">created_at · updated_at</TD><TD ALIGN="LEFT">timestamptz</TD></TR>
+</TABLE>>];
+
+  product_images [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#8f6d1e" COLSPAN="2"><FONT COLOR="white"><B>product_images</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">bigserial</TD></TR>
+<TR><TD ALIGN="LEFT">product_id FK</TD><TD ALIGN="LEFT">bigint</TD></TR>
+<TR><TD ALIGN="LEFT">url · sort_order</TD><TD ALIGN="LEFT"></TD></TR>
+</TABLE>>];
+
+  customers [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#2b5fa8" COLSPAN="2"><FONT COLOR="white"><B>customers</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">bigserial</TD></TR>
+<TR><TD ALIGN="LEFT">full_name</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT">phone UQ</TD><TD ALIGN="LEFT">text</TD></TR>
+<TR><TD ALIGN="LEFT">email · address</TD><TD ALIGN="LEFT">text</TD></TR>
+</TABLE>>];
+
+  orders [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#2b5fa8" COLSPAN="2"><FONT COLOR="white"><B>orders</B>  (PARTITION BY RANGE created_at)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">bigserial</TD></TR>
+<TR><TD ALIGN="LEFT"><B>created_at</B> PK</TD><TD ALIGN="LEFT">timestamptz</TD></TR>
+<TR><TD ALIGN="LEFT">customer_id FK</TD><TD ALIGN="LEFT">bigint</TD></TR>
+<TR><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT">text CHECK</TD></TR>
+<TR><TD ALIGN="LEFT">subtotal · shipping_fee</TD><TD ALIGN="LEFT">numeric</TD></TR>
+<TR><TD ALIGN="LEFT" BGCOLOR="#e6eefb">total (generated)</TD><TD ALIGN="LEFT" BGCOLOR="#e6eefb">numeric</TD></TR>
+<TR><TD ALIGN="LEFT">note</TD><TD ALIGN="LEFT">text</TD></TR>
+</TABLE>>];
+
+  order_items [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#2b5fa8" COLSPAN="2"><FONT COLOR="white"><B>order_items</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">bigserial</TD></TR>
+<TR><TD ALIGN="LEFT">order_id + order_created_at FK</TD><TD ALIGN="LEFT"></TD></TR>
+<TR><TD ALIGN="LEFT">product_id FK</TD><TD ALIGN="LEFT">bigint</TD></TR>
+<TR><TD ALIGN="LEFT">qty · unit_price</TD><TD ALIGN="LEFT"></TD></TR>
+<TR><TD ALIGN="LEFT" BGCOLOR="#e6eefb">line_total (generated)</TD><TD ALIGN="LEFT" BGCOLOR="#e6eefb">numeric</TD></TR>
+</TABLE>>];
+
+  stock_movements [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#2e7d4f" COLSPAN="2"><FONT COLOR="white"><B>stock_movements</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">bigserial</TD></TR>
+<TR><TD ALIGN="LEFT">product_id FK</TD><TD ALIGN="LEFT">bigint</TD></TR>
+<TR><TD ALIGN="LEFT">delta · reason · ref_id</TD><TD ALIGN="LEFT"></TD></TR>
+<TR><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT">timestamptz</TD></TR>
+</TABLE>>];
+
+  admins [label=<
+<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white">
+<TR><TD BGCOLOR="#555555" COLSPAN="2"><FONT COLOR="white"><B>admins</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT"><B>id</B> PK</TD><TD ALIGN="LEFT">serial</TD></TR>
+<TR><TD ALIGN="LEFT">username UQ · password_hash</TD><TD ALIGN="LEFT">text</TD></TR>
+</TABLE>>];
+
+  categories -> products   [label="1 : n"];
+  categories -> categories [label="cha-con", constraint=false];
+  products -> product_images [label="1 : n"];
+  products -> order_items    [label="1 : n"];
+  products -> stock_movements[label="1 : n"];
+  customers -> orders        [label="1 : n"];
+  orders -> order_items      [label="1 : n"];
+}

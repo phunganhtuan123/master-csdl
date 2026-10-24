@@ -1,0 +1,14 @@
+number of transactions per client: 1
+number of transactions actually processed: 5/50
+number of failed transactions: 0 (0.000%)
+tps = 9.170375 (without initial connection time)
+ id |                   name                   | stock 
+----+------------------------------------------+-------
+  2 | Nhẫn kim cương vàng 18K Solitaire 6 chấu |     0
+(1 row)
+
+ don_thanh_cong 
+----------------
+              5
+(1 row)
+

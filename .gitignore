@@ -1,0 +1,9 @@
+node_modules/
+.next/
+api/.env
+web/.env.local
+docs/render/
+docs/render-slides/
+docs/build/node_modules/
+*.log
+.DS_Store

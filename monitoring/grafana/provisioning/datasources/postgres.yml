@@ -1,0 +1,15 @@
+apiVersion: 1
+datasources:
+  - name: PostgreSQL
+    type: postgres
+    uid: jewelry-pg
+    url: db:5432
+    user: postgres
+    secureJsonData:
+      password: postgres
+    jsonData:
+      database: jewelry
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+    isDefault: true

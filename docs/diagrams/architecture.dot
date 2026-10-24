@@ -1,0 +1,29 @@
+digraph ARCH {
+  graph [rankdir=LR, fontname="Helvetica", bgcolor="white", nodesep=0.5, ranksep=0.9, pad=0.3];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=12, penwidth=1.2];
+  edge  [fontname="Helvetica", fontsize=10, color="#555555"];
+
+  subgraph cluster_client { label="Trình duyệt"; style="rounded,dashed"; color="#999999";
+    kh  [label="Khách hàng\n(Next.js /)", fillcolor="#fff3d6", color="#b8902e"];
+    ad  [label="Quản trị\n(Next.js /admin)", fillcolor="#fff3d6", color="#b8902e"];
+  }
+  subgraph cluster_app { label="Docker: web · api"; style="rounded,dashed"; color="#999999";
+    web [label="Next.js 15\nSSR + Client components\n:3000", fillcolor="#e6eefb", color="#2b5fa8"];
+    api [label="Node.js + Fastify\nSQL thuần (pg)\n:4000", fillcolor="#e6eefb", color="#2b5fa8"];
+  }
+  subgraph cluster_db { label="Docker: db (pgvector/pgvector:pg16)"; style="rounded,dashed"; color="#999999";
+    pg  [label="PostgreSQL 16\nJSONB · tsvector · pgvector\npartition · matview\nplace_order() · NOTIFY", fillcolor="#e6f4ec", color="#2e7d4f"];
+    ext [label="Extensions\npg_trgm · unaccent\nvector · pg_stat_statements", fillcolor="#f4f4f4", color="#777777"];
+  }
+  subgraph cluster_mon { label="Giám sát & benchmark"; style="rounded,dashed"; color="#999999";
+    gf  [label="Grafana :3001\n(PostgreSQL datasource)", fillcolor="#fde8e8", color="#b23b3b"];
+    pb  [label="pgbench · EXPLAIN ANALYZE\n(db/benchmark)", fillcolor="#fde8e8", color="#b23b3b"];
+  }
+
+  kh -> web; ad -> web;
+  web -> api [label="REST / JSON"];
+  ad -> api  [label="SSE (EventSource)", style=dashed];
+  api -> pg  [label="pool.query($1,$2)\nLISTEN low_stock, new_order"];
+  pg -> ext  [arrowhead=none];
+  gf -> pg   [label="SQL"]; pb -> pg;
+}

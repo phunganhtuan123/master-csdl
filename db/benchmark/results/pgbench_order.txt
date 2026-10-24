@@ -1,0 +1,13 @@
+pgbench (16.15 (Ubuntu 16.15-0ubuntu0.24.04.1))
+transaction type: /home/claude/jewelry-shop-postgres/db/benchmark/pgbench_place_order.sql
+scaling factor: 1
+query mode: simple
+number of clients: 30
+number of threads: 4
+maximum number of tries: 1
+duration: 8 s
+number of transactions actually processed: 5005
+number of failed transactions: 0 (0.000%)
+latency average = 47.965 ms
+initial connection time = 138.239 ms
+tps = 625.450343 (without initial connection time)

@@ -1,0 +1,23 @@
+{
+  "name": "jewelry-shop-api",
+  "version": "1.0.0",
+  "description": "Backend bán hàng trang sức - Node.js + Fastify + PostgreSQL (SQL thuần, không ORM)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "migrate": "node src/migrate.js",
+    "seed": "node src/seed.js",
+    "embed": "node src/embed.js",
+    "reset": "node src/migrate.js --reset && node src/seed.js && node src/embed.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.0"
+  }
+}
