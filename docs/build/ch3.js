@@ -34,7 +34,7 @@ where.push(\`p.attributes @> \${add(JSON.stringify(attrFilter))}::jsonb\`);
 SELECT attributes->>'metal' AS v, count(*) FROM products
 WHERE status='active' AND attributes ? 'metal' GROUP BY 1 ORDER BY 2 DESC;`),
     H3('3.1.3. Kết quả'),
-    RP('EXPLAIN ANALYZE cho thấy planner dùng `Bitmap Index Scan on idx_products_attributes`, truy vấn lọc 2 thuộc tính trên 3.033 sản phẩm mất **0,06 ms** so với **1,6 ms** khi quét tuần tự (nhanh hơn ~28 lần). Trang quản trị cho phép thêm/xoá thuộc tính tuỳ ý mà không cần ALTER TABLE (Hình 4.7).'),
+    RP('EXPLAIN ANALYZE cho thấy planner dùng `Bitmap Index Scan on idx_products_attributes`, truy vấn lọc 2 thuộc tính trên 3.033 sản phẩm mất **0,06 ms** so với **2,1 ms** khi quét tuần tự (nhanh hơn ~30 lần). Trang quản trị cho phép thêm/xoá thuộc tính tuỳ ý mà không cần ALTER TABLE (Hình 4.7).'),
     ...figure('10b-admin-benchmark-jsonb.jpg', 3, 'EXPLAIN ANALYZE lọc JSONB có GIN index (trái) và quét tuần tự (phải)'),
 
     // ---------------------------------------------------------------- 3.2 FTS
@@ -74,7 +74,7 @@ ORDER BY rank DESC LIMIT 24;
 -- Gợi ý khi gõ: khớp tiền tố 'nhan:* & kim:*'
 WHERE search_vec @@ to_tsquery('simple', vi_unaccent('nhan:* & kim:*'))`),
     H3('3.2.3. Kết quả'),
-    RP('Tìm “nhan kim cuong 18k” trả về 3 nhẫn kim cương viết tay xếp đầu rồi đến các mẫu sinh tự động (Hình 3.2); gõ sai “nhan kim cuog solitare” tầng full-text không khớp, tầng trigram tìm đúng “Nhẫn kim cương vàng 18K Solitaire 6 chấu” với similarity 0,44 (Hình 3.3). Thanh tìm kiếm gợi ý sau 200 ms mỗi lần gõ nhờ prefix search. Full-text có index nhanh hơn quét tuần tự ~7 lần, trigram ~2,5 lần.'),
+    RP('Tìm “nhan kim cuong 18k” trả về 3 nhẫn kim cương viết tay xếp đầu rồi đến các mẫu sinh tự động (Hình 3.2); gõ sai “nhan kim cuog solitare” tầng full-text không khớp, tầng trigram tìm đúng “Nhẫn kim cương vàng 18K Solitaire 6 chấu” với similarity 0,44 (Hình 3.3). Thanh tìm kiếm gợi ý sau 200 ms mỗi lần gõ nhờ prefix search. Full-text có index nhanh hơn quét tuần tự ~9 lần, trigram ~2,6 lần.'),
     ...figure('04-tim-kiem-fulltext.jpg', 3, 'Kết quả full-text search với từ khoá không dấu'),
     ...figure('05-tim-kiem-trigram.jpg', 3, 'Gõ sai chính tả – hệ thống tự chuyển sang tìm gần đúng bằng trigram'),
 
@@ -98,7 +98,7 @@ ORDER BY p.embedding <=> me.embedding
 LIMIT 8;`),
     RP('Về phía tạo embedding: trong môi trường sản xuất thường gọi mô hình AI (OpenAI text-embedding, CLIP cho ảnh…). Để tiểu luận chạy được không phụ thuộc dịch vụ ngoài, nhóm cài đặt embedding bằng kỹ thuật **feature hashing** (`api/src/embedding.js`): tách tên, mô tả, danh mục và từng cặp khoá=giá trị của JSONB thành token và bigram, băm mỗi token vào một trong 256 chiều với dấu ±, nhân trọng số (danh mục và thuộc tính ×4, tên ×3, mô tả ×1) rồi chuẩn hoá L2. Hai sản phẩm cùng chất liệu, cùng đá, cùng loại sẽ chia sẻ nhiều token nên vector gần nhau. Lược đồ và truy vấn không thay đổi nếu sau này thay bằng mô hình AI thật – chỉ cần đổi hàm `embedProduct()`.'),
     H3('3.3.3. Kết quả'),
-    RP('Với “Nhẫn kim cương vàng trắng 18K Halo”, 8 gợi ý đều là nhẫn vàng trắng 18K đính kim cương (độ tương đồng 61–65 %), trong đó có “Nhẫn kim cương vàng 18K Solitaire” (Hình 3.4). Truy vấn dùng `Index Scan using idx_products_embedding`, 0,25 ms so với 1,4 ms khi tính khoảng cách cho toàn bộ 3.033 vector. Khi thêm/sửa sản phẩm trên trang quản trị, API tính lại embedding và ghi trong cùng câu INSERT/UPDATE.'),
+    RP('Với “Nhẫn kim cương vàng trắng 18K Halo”, 8 gợi ý đều là nhẫn vàng trắng 18K đính kim cương (độ tương đồng 61–65 %), trong đó có “Nhẫn kim cương vàng 18K Solitaire” (Hình 3.4). Truy vấn dùng `Index Scan using idx_products_embedding`, 0,23 ms so với 1,7 ms khi tính khoảng cách cho toàn bộ 3.033 vector (nhanh hơn ~7 lần). Khi thêm/sửa sản phẩm trên trang quản trị, API tính lại embedding và ghi trong cùng câu INSERT/UPDATE.'),
     ...figure('03-chi-tiet-pgvector.jpg', 3, 'Trang chi tiết sản phẩm với khối “Có thể bạn cũng thích” từ pgvector', 14),
 
     // ---------------------------------------------------------------- 3.4 partition
@@ -131,8 +131,8 @@ SELECT ensure_orders_partition('2027-01-01');`),
 SELECT count(*), sum(total) FROM orders
 WHERE created_at >= '2026-10-01' AND created_at < '2026-10-15';`),
     H3('3.4.3. Kết quả'),
-    RP('Với 35.845 đơn rải trong 10 tháng, EXPLAIN cho thấy khi có pruning planner chỉ quét `orders_2026_10` (0,3 ms); khi tắt pruning phải Append 13 partition (1,7–2 ms) (Hình 3.5). Tổng kích thước BRIN trên 13 partition là **312 kB** so với **1.000 kB** của B-tree tương đương; khoảng cách này càng lớn khi dữ liệu tăng vì BRIN tăng theo số khối chứ không theo số dòng. Trang quản trị hiển thị số dòng và dung lượng từng partition (Hình 3.8).'),
-    ...figure('10-admin-benchmark-explain.jpg', 3, 'Partition pruning: chỉ quét orders_2026_10 (trái) so với Append 13 partition (phải)'),
+    RP('Để kiểm chứng partition ở quy mô thật, nhóm sinh thêm **1.035.853 đơn hàng** (1.543.358 dòng chi tiết, 312 MB) rải đều 34 tháng từ 01/2024 bằng lệnh `npm run seed:big`, tạo thành 37 partition. Với truy vấn doanh thu 2 tuần, planner chỉ quét **1/37 partition** và mất **3,3 ms**; khi tắt pruning phải Append cả 37 partition, **66 ms** (nhanh hơn ~20 lần). Báo cáo một tháng theo trạng thái: 10 ms so với 62 ms. Tổng kích thước BRIN trên 37 partition là **888 kB** so với **23 MB** của B-tree tương đương (nhỏ hơn 26 lần); BRIN tăng theo số khối chứ không theo số dòng nên khoảng cách này càng lớn khi dữ liệu tăng. Một kết quả trung thực khác: với partition theo tháng, mỗi partition chỉ ~30.000 dòng nằm gọn trong bộ nhớ đệm nên ép dùng BRIN để lọc 3 ngày (2,7 ms) không nhanh hơn quét tuần tự partition đó (1,9 ms) — nghĩa là khi đã partition, giá trị của BRIN nằm ở kích thước, còn tốc độ đến từ pruning. Trang quản trị hiển thị số dòng và dung lượng từng partition (Hình 3.8).'),
+    ...figure('10-admin-benchmark-explain.jpg', 3, 'Partition pruning: chỉ quét 1 partition (trái) so với Append toàn bộ partition (phải)'),
 
     // ---------------------------------------------------------------- 3.5 transaction
     H2('3.5. Transaction và SELECT … FOR UPDATE – chống bán quá tồn kho'),
@@ -180,12 +180,12 @@ const row = await one('SELECT * FROM place_order($1::jsonb, $2::jsonb, $3)',
   [JSON.stringify(customer), JSON.stringify(cleanItems), note ?? null]);
 // ... catch (err) { if (/^(OUT_OF_STOCK|EMPTY_ORDER)/.test(err.message)) reply.code(409).send({ error: ... }) }`),
     H3('3.5.3. Kết quả'),
-    RP('Kịch bản kiểm chứng (`db/benchmark/oversell_test.sql`): đặt stock = 5 cho một sản phẩm, dùng pgbench cho **50 client đồng thời** mỗi client mua 1 chiếc. Kết quả: đúng **5 đơn thành công**, 45 giao dịch nhận lỗi OUT_OF_STOCK, stock cuối cùng = 0, không có giao dịch nào làm kho âm. Huỷ đơn (`cancel_order()`) cũng là một giao dịch: trả kho, ghi nhật ký, đổi trạng thái – nếu bất kỳ bước nào lỗi thì không bước nào có hiệu lực.'),
+    RP('Kịch bản kiểm chứng (`db/benchmark/oversell_test.sql`): đặt stock = 5 cho một sản phẩm, dùng pgbench cho **50 client đồng thời** mỗi client mua 1 chiếc. Kết quả: đúng **5 đơn thành công**, 45 giao dịch nhận lỗi OUT_OF_STOCK, stock cuối cùng = 0, không có giao dịch nào làm kho âm. Thông lượng với 30 client đặt hàng liên tục trên CSDL 1 triệu đơn đạt ~1.090 đơn/giây, độ trễ trung bình 28 ms. Huỷ đơn (`cancel_order()`) cũng là một giao dịch: trả kho, ghi nhật ký, đổi trạng thái – nếu bất kỳ bước nào lỗi thì không bước nào có hiệu lực.'),
 
     // ---------------------------------------------------------------- 3.6 matview + notify
     H2('3.6. Materialized view và LISTEN/NOTIFY cho dashboard quản trị'),
     H3('3.6.1. Bài toán'),
-    RP('Dashboard cần doanh thu theo ngày trong 30 ngày, top sản phẩm bán chạy, doanh thu theo danh mục theo tháng. Mỗi lần mở trang mà JOIN và GROUP BY hàng chục nghìn `order_items` là lãng phí vì số liệu lịch sử không đổi. Ngoài ra người quản lý muốn được báo **ngay** khi một mã sắp hết hàng hoặc có đơn mới, không phải bấm tải lại trang; cách thông thường là polling định kỳ hoặc thêm Redis/RabbitMQ.'),
+    RP('Dashboard cần doanh thu theo ngày trong 30 ngày, top sản phẩm bán chạy, doanh thu theo danh mục theo tháng. Mỗi lần mở trang mà JOIN và GROUP BY hàng triệu dòng `order_items` là lãng phí vì số liệu lịch sử không đổi. Ngoài ra người quản lý muốn được báo **ngay** khi một mã sắp hết hàng hoặc có đơn mới, không phải bấm tải lại trang; cách thông thường là polling định kỳ hoặc thêm Redis/RabbitMQ.'),
     H3('3.6.2. Giải pháp PostgreSQL'),
     RP('**Materialized view** lưu kết quả truy vấn thành bảng vật lý, có thể đánh index và chỉ tính lại khi gọi REFRESH. Với `REFRESH MATERIALIZED VIEW CONCURRENTLY` (yêu cầu một UNIQUE INDEX), việc làm mới không chặn người đang đọc. Nhóm tạo 3 materialized view và một hàm `refresh_sales_reports()`; trang quản trị có nút “Refresh báo cáo”, khi triển khai thật có thể gọi theo lịch (pg_cron hoặc cron hệ điều hành). Số liệu “hôm nay” vẫn tính trực tiếp vì chỉ chạm partition tháng hiện tại.'),
     ...code(`-- 006_reports_matview.sql
@@ -221,7 +221,7 @@ client.on('notification', (msg) => {
   for (const res of subscribers) res.write(\`event: \${msg.channel}\\ndata: \${msg.payload}\\n\\n\`);
 });`),
     H3('3.6.3. Kết quả'),
-    RP('Đọc doanh thu 30 ngày từ materialized view mất **0,012 ms** so với **1,8 ms** khi tính trực tiếp trên bảng orders (nhanh hơn ~150 lần, và không đổi khi số đơn tăng). REFRESH CONCURRENTLY cả 3 view với 37.500 dòng chi tiết đơn mất khoảng 290 ms. Khi tồn kho một sản phẩm giảm xuống 1, trình duyệt quản trị nhận thông báo trong dưới 100 ms mà không cần tải lại (Hình 3.7); khi khách đặt đơn mới, số liệu “hôm nay” trên dashboard tự cập nhật.'),
+    RP('Trên CSDL 1 triệu đơn, đọc doanh thu 30 ngày từ materialized view mất **0,018 ms** so với **19,4 ms** khi tính trực tiếp trên bảng orders (nhanh hơn ~1.000 lần); top 10 sản phẩm bán chạy đọc từ `mv_top_products` mất 0,02 ms trong khi JOIN và GROUP BY 1,5 triệu dòng chi tiết mất **1,14 giây** – đây là loại truy vấn không thể chạy mỗi lần mở dashboard. REFRESH CONCURRENTLY cả 3 view mất vài giây và có thể đặt lịch. Khi tồn kho một sản phẩm giảm xuống 1, trình duyệt quản trị nhận thông báo trong dưới 100 ms mà không cần tải lại (Hình 3.7); khi khách đặt đơn mới, số liệu “hôm nay” trên dashboard tự cập nhật.'),
     ...figure('13-admin-notify-sse.jpg', 3, 'Thông báo “Sắp hết hàng” đẩy từ PostgreSQL (pg_notify) sang trình duyệt quản trị', 9),
 
     // ---------------------------------------------------------------- 3.7 các index khác
@@ -230,9 +230,9 @@ client.on('notification', (msg) => {
     ...table(
       [{ w: 3.2, h: 'Loại' }, { w: 5.2, h: 'Index trong hệ thống' }, { w: 7.6, h: 'Truy vấn phục vụ – lợi ích' }],
       [
-        ['Partial index', '`idx_products_low_stock ON products (stock, id) WHERE stock < 3 AND status = \'active\'`', 'Dashboard “sắp hết hàng”. Chỉ index các dòng thoả điều kiện → 40 kB so với 168 kB của khoá chính; truy vấn 0,018 ms.'],
-        ['Partial index', '`idx_orders_pending ON orders (created_at DESC) WHERE status IN (\'pending\',\'confirmed\')`', 'Danh sách đơn chờ xử lý; đơn đã hoàn tất không chiếm chỗ trong index.'],
-        ['Covering index (INCLUDE)', '`idx_orders_customer_cover ON orders (customer_id, created_at DESC) INCLUDE (status, total)`', 'Lịch sử mua của khách: mọi cột cần lấy nằm trong index → *Index Only Scan*, không đọc bảng (Heap Fetches: 0).'],
+        ['Partial index', '`idx_products_low_stock ON products (stock, id) WHERE stock < 3 AND status = \'active\'`', 'Dashboard “sắp hết hàng”. Chỉ index các dòng thoả điều kiện → 40 kB so với 168 kB của khoá chính; 0,02 ms so với 1,7 ms quét bảng (86×).'],
+        ['Partial index', '`idx_orders_pending ON orders (created_at DESC) WHERE status IN (\'pending\',\'confirmed\')`', 'Danh sách đơn chờ xử lý trên 1 triệu đơn: 0,2 ms so với 98 ms quét bảng (~480×); index 17 MB vì đơn đã hoàn tất không chiếm chỗ.'],
+        ['Covering index (INCLUDE)', '`idx_orders_customer_cover ON orders (customer_id, created_at DESC) INCLUDE (id, status, total)`', 'Lịch sử mua của khách: mọi cột cần lấy nằm trong index → *Index Only Scan*, Heap Fetches = 0; 0,2 ms so với 52 ms quét 1 triệu đơn (~250×).'],
         ['Expression index', '`idx_customers_email_lower ON customers (lower(email))`', 'Tìm khách theo email không phân biệt hoa thường mà vẫn dùng index.'],
         ['B-tree kết hợp + partial', '`idx_products_category_price ON products (category_id, price) WHERE status = \'active\'`', 'Trang danh mục sắp xếp theo giá.'],
         ['Generated column', '`orders.total`, `order_items.line_total`, `products.search_vec`', 'Dữ liệu dẫn xuất do CSDL tính, luôn nhất quán, có thể index.'],

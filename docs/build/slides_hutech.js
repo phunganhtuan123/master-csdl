@@ -119,7 +119,7 @@ bullets(s, [
   'PostgreSQL 16 + pgvector · Node.js + Fastify, SQL thuần (không ORM) · Next.js 15 (khách + admin)',
   'Logic quan trọng nằm trong CSDL: hàm place_order(), cancel_order(), trigger NOTIFY',
   '6 file migration SQL; trình chạy migration tự viết 60 dòng, mỗi file = 1 transaction',
-  'docker compose up → db + api + web + Grafana; dữ liệu mẫu 3.033 sản phẩm, 30.000 đơn',
+  'docker compose up → db + api + web + Grafana; npm run seed:big → 1 triệu đơn, npm run bench → báo cáo đo',
 ], X0, 3.85, W0, 3.1, 17);
 
 // ====================================================================== 6. ERD
@@ -146,7 +146,7 @@ CREATE INDEX idx_products_attributes
 -- Lọc: 1 câu SQL cho mọi tổ hợp thuộc tính
 WHERE attributes @>
   '{"metal":"Vàng 18K","stone":"Kim cương"}'`, X0, 1.55, 5.6, 4.0, 13);
-stat(s, '28×', 'nhanh hơn quét tuần tự\n0,056 ms so với 1,57 ms', 6.6, 1.55, 3.1);
+stat(s, '34×', 'nhanh hơn quét tuần tự\n0,06 ms so với 2,1 ms', 6.6, 1.55, 3.1);
 bullets(s, ['Không ALTER TABLE khi thêm loại trang sức mới', 'Admin thêm/xoá thuộc tính ngay trên giao diện', 'Bộ lọc bên trái cũng sinh từ JSONB'], 6.6, 3.2, 3.1, 2.4, 14);
 T(s, 'Planner: Bitmap Index Scan on idx_products_attributes', { x: X0, y: 5.7, w: W0, h: 0.4, fontSize: 14, italic: true, color: '444444' });
 
@@ -165,7 +165,7 @@ CREATE INDEX ... USING GIN (vi_unaccent(name) gin_trgm_ops);
 -- Tầng 2: vi_unaccent(name) % 'nhan kim cuog solitare'`, X0, 1.55, 5.6, 3.6, 12);
 img(s, '05-tim-kiem-trigram.jpg', 6.6, 1.55, 3.1, 1.95);
 T(s, '“nhan kim cuog solitare” → Nhẫn kim cương vàng 18K Solitaire (trigram 0,44)', { x: 6.6, y: 3.55, w: 3.1, h: 0.9, fontSize: 12, italic: true, color: '444444' });
-stat(s, '7×', 'FTS có GIN so với\nquét tuần tự', 6.6, 4.55, 3.1);
+stat(s, '9,6×', 'FTS có GIN so với\nquét tuần tự', 6.6, 4.55, 3.1);
 bullets(s, ['Không dấu / có dấu đều khớp, xếp hạng ts_rank, tô đậm ts_headline', 'Gõ sai chính tả → tự chuyển sang trigram (pg_trgm)', 'Gợi ý khi gõ bằng prefix search  nha:* & kim:*  — không cần Elasticsearch'], X0, 5.3, 5.6, 1.7, 14);
 
 s = feature(3, 'pgvector – gợi ý sản phẩm tương tự');
@@ -185,7 +185,7 @@ img(s, '03-chi-tiet-pgvector.jpg', 6.6, 1.55, 3.1, 4.0);
 bullets(s, [
   'Embedding demo bằng feature hashing: tên + danh mục + thuộc tính JSONB → 256 chiều, không cần API ngoài',
   'Thay bằng OpenAI / CLIP sau này chỉ đổi 1 hàm; schema và SQL giữ nguyên',
-  'HNSW: 0,25 ms so với 1,43 ms khi tính khoảng cách cho toàn bộ 3.033 vector (5,6×)',
+  'HNSW: 0,23 ms so với 1,7 ms khi tính khoảng cách cho toàn bộ 3.033 vector (7,4×)',
 ], X0, 4.7, 5.6, 2.3, 14);
 
 s = feature(4, 'Partitioning theo tháng + BRIN');
@@ -198,10 +198,10 @@ CREATE TABLE orders_2026_10 PARTITION OF orders
   FOR VALUES FROM ('2026-10-01') TO ('2026-11-01');
 
 CREATE INDEX ... ON orders USING BRIN (created_at);`, X0, 1.55, 5.6, 2.6, 12);
-stat(s, '1 / 13', 'partition được quét\nnhờ partition pruning', 6.6, 1.55, 3.1, THEME.colors.accent4);
-stat(s, '312 kB', 'BRIN so với 1.000 kB\nB-tree cùng cột', 6.6, 3.15, 3.1, THEME.colors.accent5);
+stat(s, '1 / 37', 'partition được quét\n(1 triệu đơn) nhờ pruning', 6.6, 1.55, 3.1, THEME.colors.accent4);
+stat(s, '888 kB', 'BRIN so với 23 MB\nB-tree cùng cột (26×)', 6.6, 3.15, 3.1, THEME.colors.accent5);
 img(s, '10-admin-benchmark-explain.jpg', X0, 4.3, 5.6, 2.1);
-bullets(s, ['Báo cáo theo khoảng ngày: 0,29 ms so với 1,68 ms', 'Lưu trữ đơn cũ = DETACH 1 partition', 'Tháng mới: ensure_orders_partition()'], 6.6, 4.75, 3.1, 2.2, 13);
+bullets(s, ['Doanh thu 2 tuần: 3,3 ms so với 66 ms (20×)', 'Lưu trữ đơn cũ = DETACH 1 partition', 'Tháng mới: ensure_orders_partition()'], 6.6, 4.75, 3.1, 2.2, 13);
 
 s = feature(5, 'Transaction + FOR UPDATE – chống bán quá kho');
 img(s, 'order_flow.jpg', X0, 1.5, 3.0, 5.5);
@@ -220,7 +220,7 @@ END LOOP;
 -- INSERT orders, order_items; UPDATE stock;
 -- CHECK (stock >= 0) là hàng rào cuối cùng`, 4.0, 1.5, 5.7, 3.55, 12);
 stat(s, '5 / 50', 'client mua được khi kho = 5\n45 client bị OUT_OF_STOCK', 4.0, 5.3, 2.75);
-stat(s, '625', 'đơn / giây với 30 client\n(pgbench, máy ảo 2 vCPU)', 6.95, 5.3, 2.75, THEME.colors.accent3);
+stat(s, '1.090', 'đơn / giây với 30 client\ntrên CSDL 1 triệu đơn', 6.95, 5.3, 2.75, THEME.colors.accent3);
 
 s = feature(6, 'Materialized view + LISTEN/NOTIFY');
 codeBox(s, `CREATE MATERIALIZED VIEW mv_sales_daily AS
@@ -232,7 +232,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sales_daily;
 -- Trigger: stock < 3 → pg_notify('low_stock', json)
 -- Node.js: LISTEN low_stock → SSE → trình duyệt admin`, X0, 1.55, 5.6, 2.5, 12);
 img(s, '13-admin-notify-sse.jpg', 6.6, 1.55, 3.1, 1.9);
-stat(s, '150×', 'doanh thu 30 ngày: 0,012 ms\nso với 1,8 ms tính trực tiếp', X0, 4.25, 2.7, THEME.colors.accent5);
+stat(s, '1.000×', 'doanh thu 30 ngày: 0,018 ms\nso với 19 ms tính trực tiếp', X0, 4.25, 2.7, THEME.colors.accent5);
 stat(s, '< 0,1 s', 'cảnh báo tới admin\nkhông F5, không Redis', X0 + 2.9, 4.25, 2.7, THEME.colors.accent4);
 img(s, '07-admin-dashboard.jpg', 6.6, 3.6, 3.1, 3.4);
 bullets(s, ['REFRESH CONCURRENTLY: không chặn người đọc', 'Số liệu “hôm nay” tính trực tiếp trên partition tháng này'], X0, 5.9, 5.6, 1.1, 13);
@@ -240,11 +240,11 @@ bullets(s, ['REFRESH CONCURRENTLY: không chặn người đọc', 'Số liệu 
 // ====================================================================== 13. Index khác
 s = content('Các loại index đặc biệt khác', '6 tính năng');
 table(s, ['Loại', 'Trong hệ thống', 'Lợi ích đo được'], [
-  ['Partial index', { text: 'products (stock, id) WHERE stock < 3', options: { fontFace: 'Courier New', fontSize: 12 } }, '40 kB thay vì 168 kB; 16×'],
-  ['Covering index (INCLUDE)', { text: 'orders (customer_id, created_at) INCLUDE (status, total)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Index Only Scan, Heap Fetches = 0'],
+  ['Partial index', { text: 'orders (created_at) WHERE status IN (pending, confirmed)', options: { fontFace: 'Courier New', fontSize: 12 } }, '0,2 ms so với 98 ms trên 1 triệu đơn (480×)'],
+  ['Covering index (INCLUDE)', { text: 'orders (customer_id, created_at) INCLUDE (id, status, total)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Index Only Scan, Heap Fetches = 0; 250×'],
   ['Expression index', { text: 'customers (lower(email))', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Tìm email không phân biệt hoa thường'],
   ['Generated column', { text: 'total = subtotal + shipping_fee\nsearch_vec = to_tsvector(...)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'CSDL tự tính, app không ghi sai được'],
-  ['GIN / HNSW / BRIN', { text: 'JSONB, tsvector, trigram, vector, thời gian', options: { fontFace: 'Courier New', fontSize: 12 } }, '2,5× – 28× so với quét tuần tự'],
+  ['GIN / HNSW / BRIN', { text: 'JSONB, tsvector, trigram, vector, thời gian', options: { fontFace: 'Courier New', fontSize: 12 } }, '2,6× – 34× so với quét tuần tự'],
 ], X0, 1.65, W0, [2.2, 3.9, 2.8], 14, 0.75);
 T(s, 'Mỗi index gắn với đúng 1 truy vấn của ứng dụng — theo dõi lượt dùng bằng pg_stat_user_indexes', { x: X0, y: 6.3, w: W0, h: 0.5, fontSize: 14, italic: true, color: '444444' });
 
@@ -261,27 +261,27 @@ bullets(s, ['Demo trực tiếp: tìm kiếm không dấu / sai chính tả, đ�
 s = content('Benchmark: có index nhanh hơn bao nhiêu?', 'Ứng dụng & kết quả');
 s.addChart(pres.ChartType.bar, [{
   name: 'Nhanh hơn (lần)',
-  labels: ['Materialized view', 'JSONB @> (GIN)', 'Partial index', 'Full-text (GIN)', 'Partition pruning', 'pgvector HNSW', 'Trigram'],
-  values: [150, 28, 16, 7, 5.9, 5.6, 2.5],
+  labels: ['Materialized view', 'Partial index', 'Covering index', 'JSONB @> (GIN)', 'Partition pruning', 'Full-text (GIN)', 'pgvector HNSW', 'Trigram'],
+  values: [1077, 484, 251, 34, 20, 9.6, 7.4, 2.6],
 }], {
   x: X0, y: 1.5, w: 5.7, h: 5.4, barDir: 'bar',
   chartColors: [BLUE], showLegend: false,
   showValue: true, dataLabelPosition: 'outEnd', dataLabelFontSize: 12, dataLabelColor: INK, dataLabelFontFace: '+mn-lt', dataLabelFormatCode: '0.#"×"',
   catAxisLabelFontSize: 12, catAxisLabelColor: INK, catAxisLabelFontFace: '+mn-lt', catGridLine: { style: 'none' },
-  valAxisHidden: true, valGridLine: { color: 'E0E0E0', size: 1 }, valAxisLabelFontFace: '+mn-lt', valAxisLabelColor: '666666', valAxisLabelFontSize: 10,
+  valAxisHidden: true, valAxisLogScaleBase: 10, valGridLine: { color: 'E0E0E0', size: 1 }, valAxisLabelFontFace: '+mn-lt', valAxisLabelColor: '666666', valAxisLabelFontSize: 10,
   showTitle: false, objectName: 'speedup-chart',
 });
-stat(s, '1.690', 'truy vấn đọc / giây\n(FTS + JSONB + vector)', 6.7, 1.55, 3.0, THEME.colors.accent3);
-stat(s, '625', 'đơn hàng / giây\n30 client đồng thời', 6.7, 3.15, 3.0, THEME.colors.accent5);
-bullets(s, ['Giám sát: pg_stat_statements, pg_stat_user_indexes, Grafana', 'Dữ liệu: 3.033 sản phẩm, 35.000 đơn, PostgreSQL 16'], 6.7, 4.8, 3.0, 2.1, 13);
+stat(s, '1 triệu', 'đơn hàng / 37 partition\nnpm run seed:big', 6.7, 1.55, 3.0, THEME.colors.accent3);
+stat(s, '1.090', 'đơn hàng / giây\n30 client đồng thời', 6.7, 3.15, 3.0, THEME.colors.accent5);
+bullets(s, ['Tool đo npm run bench: 12 kịch bản × 5 lần, lấy trung vị, xuất Markdown/JSON', 'Giám sát: pg_stat_statements, Grafana'], 6.7, 4.8, 3.0, 2.1, 13);
 
 // ====================================================================== 16. Kết luận
 pres.addSection({ title: 'Kết luận' });
 s = content('Kết luận', 'Kết luận');
 bullets(s, [
   'PostgreSQL = CSDL quan hệ + đa mô hình: một hệ thống thay cho search engine, cache, hàng đợi và vector DB',
-  '6 tính năng gắn 6 nghiệp vụ, đều có số đo: nhanh hơn 2,5× – 150×; 50 client đồng thời không bán quá kho',
-  'Hạn chế: embedding feature hashing, chưa có từ điển tiếng Việt, dữ liệu thử nghiệm vài chục nghìn dòng',
+  '6 tính năng gắn 6 nghiệp vụ, đo trên 1 triệu đơn: nhanh hơn 2,6× – 1.000×; 50 client đồng thời không bán quá kho',
+  'Hạn chế: embedding feature hashing, chưa có từ điển tiếng Việt, chưa tinh chỉnh tham số PostgreSQL',
   'Hướng phát triển: embedding CLIP theo ảnh, pg_cron tự tạo partition & refresh, replication',
 ], X0, 1.65, W0, 4.2, 18);
 T(s, 'Cảm ơn cô và các bạn đã lắng nghe!', { x: X0, y: 6.0, w: W0, h: 0.8, fontSize: 28, bold: true, color: BLUE, align: 'center', fontFace: 'Trebuchet MS', valign: 'middle' });

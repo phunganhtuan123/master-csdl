@@ -38,9 +38,9 @@ CREATE INDEX idx_orders_created_brin ON orders USING BRIN (created_at);
 
 -- ---------- 6. COVERING index (INCLUDE) -> Index-Only Scan ----------
 -- Lịch sử mua của khách: SELECT id, status, total FROM orders WHERE customer_id=? ORDER BY created_at DESC
--- Mọi cột cần lấy đều nằm trong index -> không phải đọc bảng (heap)
+-- Mọi cột cần lấy (id, status, total) đều nằm trong index -> Index Only Scan, không phải đọc bảng (heap)
 CREATE INDEX idx_orders_customer_cover ON orders (customer_id, created_at DESC)
-  INCLUDE (status, total);
+  INCLUDE (id, status, total);
 
 -- ---------- 7. PARTIAL index ----------
 -- Dashboard "sắp hết hàng": chỉ index những dòng stock < 3 -> index rất nhỏ

@@ -100,54 +100,86 @@ export async function tx(fn) {
 function chapter5() {
   return [
     H1('Chương 5: Kiểm thử, benchmark và giám sát'),
-    H2('5.1. Môi trường và dữ liệu thử nghiệm'),
-    RP('Toàn bộ số liệu được đo trên PostgreSQL 16.15 chạy trong container Linux (cấu hình mặc định, `shared_buffers` 128 MB), dữ liệu mẫu do script `seed.sql` sinh ra: 7 danh mục, 3.033 sản phẩm (40 sản phẩm viết tay với thuộc tính đầy đủ + 3.000 sản phẩm sinh tự động), 500 khách hàng, khoảng 30.000 đơn hàng rải từ tháng 1 đến tháng 10/2026 với 37.500 dòng chi tiết. Trước khi đo đã chạy `VACUUM ANALYZE`. Mỗi truy vấn chạy 3 lần, lấy lần nhanh nhất (loại bỏ ảnh hưởng cache lạnh).'),
-    H2('5.2. So sánh hiệu năng có và không có index (EXPLAIN ANALYZE)'),
-    RP('Phương pháp: chạy cùng một câu SQL hai lần; lần hai đặt `SET LOCAL enable_<loại scan> = off` để buộc planner không dùng index. Với materialized view thì so với câu truy vấn tính trực tiếp. Script `db/benchmark/explain_before_after.sql` và trang Admin → Monitor & Benchmark đều cho ra kết quả này.'),
+    H2('5.1. Dữ liệu thử nghiệm: 1 triệu đơn hàng'),
+    RP('Dữ liệu mẫu ban đầu (30.000 đơn) đủ để chạy ứng dụng nhưng quá nhỏ để thấy giá trị của partition và index – mọi bảng đều nằm gọn trong bộ nhớ đệm. Vì vậy nhóm viết thêm script `api/src/seed-big.js` (`npm run seed:big`) sinh **1.035.853 đơn hàng** và **1.543.358 dòng chi tiết** rải đều từ 01/2024 đến 10/2026, tự tạo partition cho từng tháng bằng hàm `ensure_orders_partition()`. Script chèn theo từng tháng bằng `generate_series` ngay trong CSDL (không đi qua ứng dụng) nên mất khoảng 100 giây; số lượng có thể đổi qua biến môi trường `BIG_ORDERS`.'),
     ...table(
-      [{ w: 5.2, h: 'Kịch bản' }, { w: 2.6, h: 'Có index (ms)', align: 'center' }, { w: 2.8, h: 'Không index (ms)', align: 'center' }, { w: 2.2, h: 'Nhanh hơn', align: 'center' }, { w: 3.2, h: 'Loại scan khi có index' }],
+      [{ w: 5, h: 'Chỉ số' }, { w: 11, h: 'Giá trị' }],
       [
-        ['Lọc JSONB `@>` 2 thuộc tính', '0,056', '1,572', '28×', 'Bitmap Index Scan (GIN)'],
-        ['Full-text search 3 từ', '0,078', '0,545', '7×', 'Bitmap Index Scan (GIN)'],
-        ['Trigram gõ sai chính tả', '6,0', '15,3', '2,5×', 'Bitmap Index Scan (GIN trgm)'],
-        ['pgvector 8 láng giềng', '0,254', '1,427', '5,6×', 'Index Scan (HNSW)'],
-        ['Đơn theo khoảng ngày (pruning)', '0,286', '1,678', '5,9×', 'Seq Scan 1 partition'],
-        ['Sắp hết hàng (partial index)', '0,018', '0,296', '16×', 'Index Scan (partial)'],
-        ['Lịch sử mua của khách (covering)', '0,065', '0,058', '≈1×', 'Index Only Scan, Heap Fetches 0'],
-        ['Doanh thu 30 ngày (matview)', '0,012', '1,798', '150×', 'Seq Scan trên matview'],
-      ], 5, 'Thời gian thực thi có và không có index trên dữ liệu mẫu'),
-    RP('Nhận xét: với tập dữ liệu còn nhỏ (vài nghìn sản phẩm, vài chục nghìn đơn) chênh lệch đã từ vài lần đến hàng trăm lần; khoảng cách này tăng theo kích thước dữ liệu vì quét tuần tự tăng tuyến tính còn index tăng theo log hoặc gần như không đổi (matview, BRIN). Covering index chưa thể hiện lợi thế vì bảng đang nằm trọn trong bộ nhớ đệm; lợi ích của Index Only Scan rõ nhất khi bảng lớn hơn RAM. Kích thước index cũng là một tiêu chí: BRIN trên `created_at` chiếm 312 kB so với 1.000 kB của B-tree; partial index sắp hết hàng chỉ 40 kB.'),
+        ['PostgreSQL', '16.15, container Linux 2 vCPU, cấu hình mặc định (shared_buffers 128 MB, work_mem 4 MB)'],
+        ['Sản phẩm', '3.033 (40 viết tay + 2.993 sinh tự động), mỗi sản phẩm có JSONB, tsvector và vector 256 chiều'],
+        ['Đơn hàng', '1.035.853 dòng, 37 partition theo tháng, 312 MB (kể cả index)'],
+        ['Chi tiết đơn', '1.543.358 dòng, 241 MB'],
+        ['Khách hàng', '1.006'],
+        ['Dung lượng CSDL', '602 MB'],
+      ], 5, 'Môi trường và dữ liệu thử nghiệm'),
+    H2('5.2. Công cụ đo: bench.js'),
+    RP('Để kết quả lặp lại được và không phụ thuộc thao tác tay, nhóm viết công cụ đo `api/src/bench.js` (`npm run bench`). Công cụ này:'),
+    ...bullets([
+      'Chạy `VACUUM ANALYZE` rồi lần lượt 12 kịch bản, mỗi kịch bản **5 lần** bằng `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` và lấy **trung vị** để loại nhiễu.',
+      'Mỗi kịch bản chạy hai cấu hình: (A) bình thường – planner tự chọn index; (B) tắt loại scan tương ứng bằng `SET LOCAL enable_… = off` trong một transaction rồi ROLLBACK, hoặc so với câu truy vấn tương đương không dùng cấu trúc đặc biệt (materialized view).',
+      'Đọc kế hoạch JSON để ghi lại loại scan, tên index, số partition thật sự bị quét, Heap Fetches và số buffer.',
+      'Đo kích thước index: tạo tạm B-tree trên `orders(created_at)` để so với BRIN rồi xoá; partial, covering, khoá chính.',
+      'Xuất `docs/benchmark/bench-report.md` (bảng Markdown) và `bench-report.json` (để vẽ biểu đồ), đồng thời in bảng ra màn hình.',
+    ]),
+    ...code(`$ cd api && npm run bench
+Benchmark PostgreSQL — 5 lần/kịch bản, lấy trung vị
+PostgreSQL 16.15 · 1,035,853 đơn / 37 partition / 312 MB · 1,543,358 chi tiết · shared_buffers 128MB
+
+Kịch bản                                     Có index   Không index  Nhanh hơn  Scan (có index)
+JSONB @> với GIN (jsonb_path_ops)            0.062 ms   2.136 ms     34.5×      Bitmap Index Scan
+Doanh thu 2 tuần: partition pruning + BRIN   3.276 ms   66.405 ms    20.3×      Seq Scan [1/37 partition]
+Lịch sử mua của khách: covering (INCLUDE)    0.207 ms   51.885 ms    250.7×     Index Only Scan
+Đơn chờ xử lý mới nhất: partial index        0.202 ms   97.83 ms     484.3×     Index Scan
+Doanh thu 30 ngày: matview vs tính trực tiếp 0.018 ms   19.388 ms    1077×      Index Scan trên matview
+...
+Kích thước index: BRIN created_at 888 kB vs B-tree 23 MB (nhỏ hơn 26.3×)`),
+    H2('5.3. Kết quả: có và không có index trên 1 triệu đơn hàng'),
+    ...table(
+      [{ w: 5.4, h: 'Kịch bản' }, { w: 2.3, h: 'Có index (ms)', align: 'center' }, { w: 2.5, h: 'Không index (ms)', align: 'center' }, { w: 2, h: 'Nhanh hơn', align: 'center' }, { w: 3.8, h: 'Scan khi có index' }],
+      [
+        ['Lọc JSONB `@>` 2 thuộc tính', '0,062', '2,136', '34×', 'Bitmap Index Scan (GIN)'],
+        ['Full-text search 3 từ', '0,065', '0,622', '9,6×', 'Bitmap Index Scan (GIN)'],
+        ['Trigram gõ sai chính tả', '6,35', '16,3', '2,6×', 'Bitmap Index Scan (GIN trgm)'],
+        ['pgvector 8 láng giềng', '0,232', '1,72', '7,4×', 'Index Scan (HNSW)'],
+        ['Doanh thu 2 tuần (pruning)', '3,28', '66,4', '20×', 'Seq Scan 1/37 partition'],
+        ['Doanh thu 1 tháng theo trạng thái', '10,5', '62,4', '6×', 'Seq Scan 1/37 partition'],
+        ['Ép dùng BRIN lọc 3 ngày trong 1 partition', '2,74', '1,93', '0,7×', 'Bitmap Index Scan (BRIN)'],
+        ['Lịch sử mua của khách (covering)', '0,207', '51,9', '250×', 'Index Only Scan, Heap Fetches 0'],
+        ['Đơn chờ xử lý mới nhất (partial)', '0,202', '97,8', '484×', 'Index Scan (partial)'],
+        ['Sắp hết hàng (partial)', '0,020', '1,71', '86×', 'Bitmap Index Scan (partial)'],
+        ['Doanh thu 30 ngày (matview)', '0,018', '19,4', '1.077×', 'Index Scan trên matview'],
+        ['Top 10 bán chạy (matview)', '0,020', '1.142', '57.000×', 'Seq Scan trên matview'],
+      ], 5, 'Thời gian thực thi có và không có index (trung vị 5 lần, 1.035.853 đơn hàng)'),
+    ...table(
+      [{ w: 6, h: 'Index' }, { w: 3, h: 'Kích thước', align: 'center' }, { w: 7, h: 'Ghi chú' }],
+      [
+        ['BRIN trên orders(created_at)', '888 kB', 'Tổng 37 partition'],
+        ['B-tree trên orders(created_at)', '23 MB', 'Tạo tạm để so sánh – BRIN nhỏ hơn 26 lần'],
+        ['Partial idx_orders_pending', '17 MB', 'Chỉ chứa đơn pending/confirmed (~25 % số đơn)'],
+        ['Covering idx_orders_customer_cover', '65 MB', 'INCLUDE (id, status, total) – đổi dung lượng lấy Index Only Scan'],
+        ['Partial idx_products_low_stock', '40 kB', 'So với khoá chính products 168 kB'],
+      ], 5, 'Kích thước các index trên bảng orders và products'),
+    RP('**Nhận xét.** (1) Lợi ích của index tăng theo kích thước dữ liệu: cùng truy vấn đơn chờ xử lý, trên 30.000 đơn index nhanh hơn ~16 lần, trên 1 triệu đơn nhanh hơn ~480 lần, vì quét tuần tự tăng tuyến tính còn index gần như không đổi. (2) Partition pruning là nguồn tăng tốc chính cho các báo cáo theo thời gian; khi đã partition theo tháng thì mỗi partition đủ nhỏ để BRIN không nhanh hơn quét tuần tự – giá trị của BRIN lúc này là kích thước (888 kB so với 23 MB) và nó vẫn hữu ích khi partition lớn hơn RAM. (3) Materialized view biến truy vấn hơn 1 giây thành micro-giây, đổi lại số liệu trễ đến lần REFRESH gần nhất – phù hợp cho báo cáo lịch sử, không dùng cho tồn kho. (4) Covering index tốn thêm 65 MB nhưng cho Index Only Scan (Heap Fetches = 0); với bảng lớn hơn RAM đây là khác biệt giữa đọc đĩa và không đọc đĩa.'),
     ...figure('12-admin-pg-stat-statements.jpg', 5, 'Thống kê câu SQL từ pg_stat_statements trên trang quản trị'),
-    H2('5.3. Kiểm chứng chống bán quá tồn kho'),
+    H2('5.4. Kiểm chứng chống bán quá tồn kho'),
     RP('Dùng pgbench với kịch bản `oversell_test.sql`: đặt tồn kho của sản phẩm id = 2 bằng 5, khởi chạy 50 client đồng thời, mỗi client gọi `place_order()` mua 1 chiếc.'),
     ...code(`$ bash db/benchmark/run_bench.sh oversell
 number of clients: 50
 number of transactions actually processed: 5/50     ← chỉ 5 giao dịch thành công
  id |                   name                   | stock
 ----+------------------------------------------+-------
-  2 | Nhẫn kim cương vàng 18K Solitaire 6 chấu |     0
- don_thanh_cong
-----------------
-              5`),
-    RP('Kết quả đúng như kỳ vọng: 5 đơn được tạo, 45 giao dịch còn lại bị từ chối với lỗi OUT_OF_STOCK, tồn kho về 0 và không bao giờ âm. Khi chạy cùng kịch bản với phiên bản không có `FOR UPDATE` (kiểm tra tồn kho ở tầng ứng dụng), số đơn thành công vượt quá 5 – minh hoạ rõ vì sao phải để CSDL kiểm soát đồng thời.'),
-    H2('5.4. Thông lượng với pgbench'),
+  2 | Nhẫn kim cương vàng 18K Solitaire 6 chấu |     0`),
+    RP('Kết quả đúng như kỳ vọng: 5 đơn được tạo, 45 giao dịch còn lại bị từ chối với lỗi OUT_OF_STOCK, tồn kho về 0 và không bao giờ âm. Nếu bỏ `FOR UPDATE` và kiểm tra tồn kho ở tầng ứng dụng, số đơn thành công vượt quá 5 – minh hoạ vì sao phải để CSDL kiểm soát đồng thời.'),
+    H2('5.5. Thông lượng với pgbench'),
     ...table(
-      [{ w: 5, h: 'Kịch bản' }, { w: 2.5, h: 'Client', align: 'center' }, { w: 2.5, h: 'Thời gian', align: 'center' }, { w: 3, h: 'Giao dịch/giây', align: 'center' }, { w: 3, h: 'Độ trễ TB', align: 'center' }],
+      [{ w: 6, h: 'Kịch bản (trên CSDL 1 triệu đơn)' }, { w: 2, h: 'Client', align: 'center' }, { w: 2, h: 'Thời gian', align: 'center' }, { w: 3, h: 'Giao dịch/giây', align: 'center' }, { w: 3, h: 'Độ trễ TB', align: 'center' }],
       [
-        ['Đặt hàng đồng thời (`place_order`, mỗi đơn 1 sản phẩm ngẫu nhiên)', '30', '8 s', '≈ 625', '48 ms'],
-        ['Tải đọc: full-text + lọc JSONB + gợi ý vector (3 câu/giao dịch)', '20', '8 s', '≈ 1.690', '12 ms'],
+        ['Đặt hàng đồng thời (`place_order`, mỗi đơn 1 sản phẩm ngẫu nhiên)', '30', '10 s', '≈ 1.090', '28 ms'],
+        ['Tải đọc: full-text + lọc JSONB + gợi ý vector (3 câu/giao dịch)', '20', '10 s', '≈ 850', '24 ms'],
       ], 5, 'Kết quả pgbench (máy ảo 2 vCPU, cấu hình PostgreSQL mặc định)'),
-    RP('Với một cửa hàng trang sức, vài trăm đơn mỗi giây và gần hai nghìn lượt tìm kiếm mỗi giây là dư thừa so với nhu cầu thực tế, cho thấy một PostgreSQL đơn lẻ với index phù hợp đủ phục vụ mà không cần cache hay hệ thống tìm kiếm riêng.'),
-    H2('5.5. Giám sát'),
-    H3('5.5.1. pg_stat_statements'),
-    RP('Extension này ghi nhận mọi câu SQL đã chuẩn hoá: số lần gọi, tổng/trung bình thời gian, số dòng, tỉ lệ cache hit. Trang quản trị hiển thị top 25 câu theo tổng thời gian hoặc số lần gọi và có nút reset. Nhờ đó dễ phát hiện câu nào cần thêm index: ví dụ sau khi seed, câu tính embedding chiếm nhiều thời gian nhất (3.033 lần gọi) – hợp lý vì chạy một lần; các API trang khách đều có trung bình dưới 1 ms.'),
-    H3('5.5.2. Thống kê bảng, index, partition'),
-    RP('Các view hệ thống `pg_stat_user_tables`, `pg_stat_user_indexes`, `pg_inherits` cùng hàm `pg_relation_size()` cho biết số dòng, dung lượng, số lần quét tuần tự/quét index của từng bảng và số lần mỗi index được dùng. Index có `idx_scan = 0` lâu ngày là ứng viên để xoá. Trang quản trị trình bày các số liệu này (Hình 3.8).'),
-    H3('5.5.3. Grafana'),
-    RP('Container Grafana được cấu hình sẵn datasource PostgreSQL và dashboard “Jewelry Shop – PostgreSQL Monitor” gồm 12 panel: kết nối đang mở, dung lượng CSDL, tỉ lệ cache hit, số giao dịch, đơn và doanh thu hôm nay, đơn theo giờ 7 ngày, doanh thu 30 ngày (từ materialized view), top câu SQL, index usage, số dòng từng partition, sản phẩm sắp hết hàng. Dashboard tự làm mới mỗi 10 giây và không cần Prometheus vì Grafana truy vấn SQL trực tiếp.'),
-    ...code(`-- Ví dụ panel "Cache hit %" trong monitoring/grafana/dashboards/jewelry-monitor.json
-SELECT round(100.0 * blks_hit / nullif(blks_hit + blks_read, 0), 2) AS cache_hit
-FROM pg_stat_database WHERE datname = 'jewelry';`),
+    RP('Khoảng một nghìn đơn mỗi giây trên CSDL đã có 1 triệu đơn là dư thừa so với nhu cầu của một cửa hàng trang sức, cho thấy một PostgreSQL đơn lẻ với index phù hợp đủ phục vụ mà không cần cache hay hệ thống tìm kiếm riêng.'),
+    H2('5.6. Giám sát'),
+    RP('**pg_stat_statements** ghi nhận mọi câu SQL đã chuẩn hoá: số lần gọi, tổng/trung bình thời gian, số dòng, tỉ lệ cache hit. Trang quản trị hiển thị top 25 câu theo tổng thời gian hoặc số lần gọi và có nút reset – câu nào trung bình chậm là ứng viên để thêm index. **pg_stat_user_tables / pg_stat_user_indexes / pg_inherits** cho biết số dòng, dung lượng, số lần quét tuần tự hay quét index của từng bảng, lượt dùng của từng index (index có `idx_scan = 0` lâu ngày nên xoá) và danh sách partition (Hình 3.8). **Grafana** được cấu hình sẵn datasource PostgreSQL và dashboard 12 panel (kết nối, dung lượng, cache hit, giao dịch, đơn theo giờ, doanh thu 30 ngày từ materialized view, top câu SQL, index usage, số dòng từng partition, sắp hết hàng), tự làm mới 10 giây, truy vấn SQL trực tiếp nên không cần Prometheus.'),
     pageBreak(),
   ];
 }
@@ -158,19 +190,19 @@ function conclusion() {
     H2('1. Kết quả đạt được'),
     RP('Tiểu luận đã xây dựng hoàn chỉnh một hệ thống bán hàng trang sức trên PostgreSQL 16 gồm lược đồ 8 bảng với đầy đủ ràng buộc, 6 file migration bằng SQL thuần, backend Node.js/Fastify không dùng ORM, frontend Next.js cho khách hàng và quản trị viên, đóng gói Docker Compose kèm Grafana. Quan trọng hơn, mỗi tính năng nổi bật của PostgreSQL được gắn với một bài toán nghiệp vụ thật và được kiểm chứng bằng số liệu:'),
     ...bullets([
-      '**JSONB + GIN** giải quyết thuộc tính khác nhau giữa các loại trang sức, lọc nhanh hơn quét tuần tự 28 lần.',
+      '**JSONB + GIN** giải quyết thuộc tính khác nhau giữa các loại trang sức, lọc nhanh hơn quét tuần tự ~30 lần.',
       '**Full-text search tiếng Việt** với unaccent và pg_trgm cho phép tìm không dấu, gõ sai chính tả, gợi ý khi gõ – không cần Elasticsearch.',
       '**pgvector + HNSW** mang tính năng gợi ý sản phẩm tương tự theo hướng AI vào ngay CSDL.',
-      '**Partitioning + BRIN** giữ bảng đơn hàng gọn khi dữ liệu tăng; partition pruning chỉ quét đúng tháng cần.',
+      '**Partitioning + BRIN** kiểm chứng trên 1 triệu đơn: pruning chỉ quét 1/37 partition (nhanh hơn 20 lần), BRIN nhỏ hơn B-tree 26 lần.',
       '**Transaction + SELECT FOR UPDATE** trong hàm PL/pgSQL bảo đảm không bán quá tồn kho, kiểm chứng với 50 client đồng thời.',
-      '**Materialized view + LISTEN/NOTIFY** cho dashboard nhanh gấp 150 lần và cảnh báo thời gian thực mà không cần Redis hay hàng đợi.',
+      '**Materialized view + LISTEN/NOTIFY** cho dashboard nhanh gấp hàng nghìn lần trên 1 triệu đơn và cảnh báo thời gian thực mà không cần Redis hay hàng đợi.',
     ]),
     RP('Qua đó nhóm rút ra nhận định: PostgreSQL không chỉ là một CSDL quan hệ mà là một nền tảng dữ liệu đa mô hình; với một hệ thống thương mại điện tử quy mô vừa, việc tận dụng đúng các tính năng của PostgreSQL có thể thay thế nhiều thành phần hạ tầng riêng lẻ, giảm chi phí vận hành và độ phức tạp.'),
     H2('2. Hạn chế'),
     ...bullets([
       'Embedding cho pgvector dùng kỹ thuật feature hashing nên chỉ phản ánh tương đồng về từ khoá/thuộc tính, chưa phải “hiểu” ngữ nghĩa hay hình ảnh như mô hình AI thật.',
       'Chưa có từ điển tiếng Việt cho full-text search (tách từ ghép, từ đồng nghĩa); hiện xử lý ở mức bỏ dấu và trigram.',
-      'Dữ liệu thử nghiệm mới ở mức vài chục nghìn dòng; chưa đo trên hàng triệu đơn hàng và chưa thử nghiệm replication/high availability.',
+      'Mới đo đến 1 triệu đơn hàng trên một máy ảo 2 vCPU với cấu hình PostgreSQL mặc định; chưa tinh chỉnh tham số và chưa thử nghiệm replication/high availability.',
       'Nghiệp vụ còn đơn giản: chưa có thanh toán trực tuyến, khuyến mãi, nhiều kho.',
     ]),
     H2('3. Hướng phát triển'),
@@ -205,6 +237,8 @@ docker compose up -d --build
 # Cách 2: chạy tay (cần PostgreSQL 16 + pgvector)
 cd api && cp .env.example .env && npm install
 npm run migrate && npm run seed && npm run embed && npm run dev      # API :4000
+npm run seed:big   # (tuỳ chọn) sinh 1 triệu đơn hàng để test partition/index
+npm run bench      # công cụ đo -> docs/benchmark/bench-report.md
 cd ../web && npm install && npm run dev                              # Web :3000
 
 # Benchmark
@@ -214,7 +248,7 @@ bash db/benchmark/run_bench.sh explain | order | search | oversell`),
 ├── db/migrations/001_extensions.sql … 006_reports_matview.sql
 ├── db/seed/seed.sql
 ├── db/benchmark/{explain_before_after.sql, pgbench_*.sql, oversell_test.sql, run_bench.sh}
-├── api/src/{server.js, db.js, migrate.js, seed.js, embed.js, embedding.js}
+├── api/src/{server.js, db.js, migrate.js, seed.js, seed-big.js, embed.js, embedding.js, bench.js}
 ├── api/src/routes/{catalog.js, search.js, orders.js, admin.js, monitor.js, events.js}
 ├── web/app/(shop)/…        trang khách hàng
 ├── web/app/admin/…         trang quản trị

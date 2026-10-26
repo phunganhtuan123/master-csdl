@@ -129,7 +129,7 @@ function intro() {
       'Nghiên cứu tài liệu chính thức của PostgreSQL và các extension; tham khảo bảng xếp hạng DB-Engines.',
       'Phân tích nghiệp vụ, thiết kế ERD, viết lược đồ bằng SQL thuần theo từng file migration.',
       'Xây dựng ứng dụng theo mô hình 3 lớp (trình duyệt – API – CSDL), đưa logic nghiệp vụ quan trọng (đặt hàng) vào hàm PL/pgSQL trong CSDL.',
-      'Sinh dữ liệu mẫu đủ lớn (hơn 3.000 sản phẩm, 30.000 đơn hàng) để đo lường; so sánh có/không index bằng EXPLAIN ANALYZE; kiểm chứng tính đúng đắn bằng kịch bản đặt hàng đồng thời.',
+      'Sinh dữ liệu đủ lớn (hơn 3.000 sản phẩm, 1 triệu đơn hàng, 37 partition) và viết công cụ đo riêng so sánh có/không index bằng EXPLAIN ANALYZE; kiểm chứng tính đúng đắn bằng kịch bản đặt hàng đồng thời với pgbench.',
     ]),
     H2('5. Bố cục tiểu luận'),
     RP('Ngoài phần mở đầu, kết luận, tài liệu tham khảo và phụ lục, tiểu luận gồm 5 chương:'),

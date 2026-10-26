@@ -20,6 +20,7 @@ Ngoài ra: partial index, covering index (INCLUDE), expression index, generated 
 ```
 db/migrations/      001..006 — SQL thuần, chạy theo thứ tự (migration runner tự viết)
 db/seed/seed.sql    dữ liệu mẫu: 40 sản phẩm thật + 3.000 sinh tự động, 500 khách, 30.000 đơn
+api/src/seed-big.js 1 triệu đơn hàng để test partition/index · api/src/bench.js công cụ đo
 db/benchmark/       EXPLAIN ANALYZE trước/sau index, pgbench, kiểm chứng chống bán quá kho
 api/                Node.js + Fastify + pg  (port 4000)
 web/                Next.js — trang bán hàng (/) và quản trị (/admin)  (port 3000)
@@ -58,7 +59,15 @@ cd web && npm install && npm run dev   # http://localhost:3000
 cd api && npm run reset
 ```
 
-## Benchmark
+## Dữ liệu lớn & công cụ đo
+
+```bash
+cd api
+npm run seed:big                 # sinh 1.000.000 đơn hàng (34 tháng, 37 partition) ~100 s; BIG_ORDERS=3000000 để tăng
+npm run bench                    # tool đo: 12 kịch bản có/không index × 5 lần (trung vị), kích thước index
+                                 # -> docs/benchmark/bench-report.md + bench-report.json
+```
+Kết quả gần nhất trên 1.035.853 đơn (máy ảo 2 vCPU, cấu hình mặc định): xem [docs/benchmark/bench-report.md](docs/benchmark/bench-report.md).
 
 ```bash
 export DATABASE_URL=postgres://postgres:postgres@localhost:5432/jewelry

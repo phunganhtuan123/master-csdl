@@ -10,7 +10,9 @@
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "embed": "node src/embed.js",
-    "reset": "node src/migrate.js --reset && node src/seed.js && node src/embed.js"
+    "reset": "node src/migrate.js --reset && node src/seed.js && node src/embed.js",
+    "seed:big": "node src/seed-big.js",
+    "bench": "node src/bench.js"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",

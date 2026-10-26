@@ -1,0 +1,422 @@
+{
+ "generated_at": "2026-10-26T15:41:24.814Z",
+ "rounds": 5,
+ "info": {
+  "version": "PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+  "products": "3033",
+  "orders": "1035853",
+  "order_items": "1543358",
+  "customers": "1006",
+  "partitions": "37",
+  "orders_size": "312 MB",
+  "order_items_size": "241 MB",
+  "db_size": "602 MB",
+  "shared_buffers": "128MB",
+  "work_mem": "4MB"
+ },
+ "sizes": {
+  "brin_created_at": "888 kB",
+  "btree_created_at": "23 MB",
+  "brin_ratio": 26.3,
+  "partial_pending": "17 MB",
+  "covering_customer": "65 MB",
+  "partial_low_stock": "40 kB",
+  "products_pkey": "168 kB",
+  "products_indexes": [
+   {
+    "index": "idx_products_name_trgm",
+    "size": "5536 kB"
+   },
+   {
+    "index": "idx_products_search_vec",
+    "size": "4816 kB"
+   },
+   {
+    "index": "idx_products_embedding",
+    "size": "4056 kB"
+   },
+   {
+    "index": "idx_products_attributes",
+    "size": "1152 kB"
+   },
+   {
+    "index": "idx_products_category_price",
+    "size": "432 kB"
+   },
+   {
+    "index": "products_sku_key",
+    "size": "200 kB"
+   },
+   {
+    "index": "products_slug_key",
+    "size": "200 kB"
+   },
+   {
+    "index": "products_pkey",
+    "size": "168 kB"
+   },
+   {
+    "index": "idx_products_low_stock",
+    "size": "40 kB"
+   }
+  ]
+ },
+ "results": [
+  {
+   "key": "jsonb_gin",
+   "group": "Index",
+   "title": "JSONB @> với GIN (jsonb_path_ops)",
+   "sql": "SELECT count(*) FROM products WHERE attributes @> '{\"metal\":\"Vàng 18K\",\"stone\":\"Kim cương\"}'",
+   "off": "enable_bitmapscan",
+   "with_index": {
+    "ms": 0.062,
+    "min_ms": 0.047,
+    "buffers": 48,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan",
+    "indexes": [
+     "idx_products_attributes"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 2.136,
+    "min_ms": 1.263,
+    "buffers": 2533,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": null,
+    "heap_fetches": null,
+    "label": "SET enable_bitmapscan = off"
+   },
+   "speedup": 34.5
+  },
+  {
+   "key": "fts_gin",
+   "group": "Index",
+   "title": "Full-text search tiếng Việt (GIN tsvector)",
+   "sql": "SELECT id FROM products WHERE search_vec @@ plainto_tsquery('simple', vi_unaccent('nhẫn kim cương 18k')) LIMIT 20",
+   "off": "enable_bitmapscan",
+   "with_index": {
+    "ms": 0.065,
+    "min_ms": 0.063,
+    "buffers": 35,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan",
+    "indexes": [
+     "idx_products_search_vec"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 0.622,
+    "min_ms": 0.584,
+    "buffers": 877,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": null,
+    "heap_fetches": null,
+    "label": "SET enable_bitmapscan = off"
+   },
+   "speedup": 9.6
+  },
+  {
+   "key": "trgm",
+   "group": "Index",
+   "title": "Tìm gần đúng bằng trigram (gõ sai chính tả)",
+   "sql": "SELECT id FROM products WHERE vi_unaccent(name) % 'nhan kim cuog solitare'",
+   "off": "enable_bitmapscan",
+   "with_index": {
+    "ms": 6.346,
+    "min_ms": 6.109,
+    "buffers": 942,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan",
+    "indexes": [
+     "idx_products_name_trgm"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 16.256,
+    "min_ms": 16.081,
+    "buffers": 2533,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": null,
+    "heap_fetches": null,
+    "label": "SET enable_bitmapscan = off"
+   },
+   "speedup": 2.6
+  },
+  {
+   "key": "vector_hnsw",
+   "group": "Index",
+   "title": "pgvector: 8 láng giềng gần nhất (HNSW)",
+   "sql": "SELECT id FROM products ORDER BY embedding <=> (SELECT embedding FROM products WHERE sku = 'NK-001') LIMIT 8",
+   "off": "enable_indexscan",
+   "with_index": {
+    "ms": 0.232,
+    "min_ms": 0.156,
+    "buffers": 420,
+    "scan": "Index Scan",
+    "indexes": [
+     "products_sku_key",
+     "idx_products_embedding"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 1.72,
+    "min_ms": 1.598,
+    "buffers": 2536,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan + Seq Scan",
+    "indexes": [
+     "products_sku_key"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null,
+    "label": "SET enable_indexscan = off"
+   },
+   "speedup": 7.4
+  },
+  {
+   "key": "partition_pruning",
+   "group": "Partition",
+   "title": "Doanh thu 2 tuần: partition pruning + BRIN",
+   "sql": "SELECT count(*), sum(total) FROM orders WHERE created_at >= '2026-09-01' AND created_at < '2026-09-15'",
+   "off": "enable_partition_pruning",
+   "with_index": {
+    "ms": 3.276,
+    "min_ms": 3.161,
+    "buffers": 610,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 1,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 66.405,
+    "min_ms": 65.787,
+    "buffers": 20344,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 37,
+    "heap_fetches": null,
+    "label": "SET enable_partition_pruning = off"
+   },
+   "speedup": 20.3
+  },
+  {
+   "key": "partition_month",
+   "group": "Partition",
+   "title": "Báo cáo doanh thu 1 tháng theo trạng thái",
+   "sql": "SELECT status, count(*), sum(total) FROM orders WHERE created_at >= '2026-06-01' AND created_at < '2026-07-01' GROUP BY status",
+   "off": "enable_partition_pruning",
+   "with_index": {
+    "ms": 10.467,
+    "min_ms": 10.333,
+    "buffers": 609,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 1,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 62.382,
+    "min_ms": 55.753,
+    "buffers": 20360,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 37,
+    "heap_fetches": null,
+    "label": "SET enable_partition_pruning = off"
+   },
+   "speedup": 6
+  },
+  {
+   "key": "brin_vs_seq",
+   "group": "Partition",
+   "title": "BRIN lọc 3 ngày (ép dùng BRIN) so với quét cả partition",
+   "sql": "SELECT count(*), sum(total) FROM orders WHERE created_at >= '2026-06-10' AND created_at < '2026-06-13'",
+   "force": "enable_seqscan",
+   "off": "enable_bitmapscan",
+   "with_index": {
+    "ms": 2.739,
+    "min_ms": 2.499,
+    "buffers": 483,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan",
+    "indexes": [
+     "orders_*_created_at_idx"
+    ],
+    "partitions_scanned": 1,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 1.927,
+    "min_ms": 1.925,
+    "buffers": 609,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 1,
+    "heap_fetches": null,
+    "label": "SET enable_bitmapscan = off"
+   },
+   "speedup": 0.7
+  },
+  {
+   "key": "covering",
+   "group": "Index",
+   "title": "Lịch sử mua của khách: covering index (INCLUDE)",
+   "sql": "SELECT id, status, total FROM orders WHERE customer_id = 42 ORDER BY created_at DESC LIMIT 20",
+   "off": [
+    "enable_indexscan",
+    "enable_indexonlyscan",
+    "enable_bitmapscan"
+   ],
+   "with_index": {
+    "ms": 0.207,
+    "min_ms": 0.166,
+    "buffers": 143,
+    "scan": "Index Only Scan",
+    "indexes": [
+     "orders_*_customer_id_created_at_id_status_total_idx"
+    ],
+    "partitions_scanned": 37,
+    "heap_fetches": 0
+   },
+   "without_index": {
+    "ms": 51.885,
+    "min_ms": 49.253,
+    "buffers": 20420,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 37,
+    "heap_fetches": null,
+    "label": "SET enable_indexscan, enable_indexonlyscan, enable_bitmapscan = off"
+   },
+   "speedup": 250.7
+  },
+  {
+   "key": "partial_pending",
+   "group": "Index",
+   "title": "Đơn chờ xử lý mới nhất: partial index",
+   "sql": "SELECT id, created_at FROM orders WHERE status IN ('pending','confirmed') ORDER BY created_at DESC LIMIT 50",
+   "off": [
+    "enable_indexscan",
+    "enable_bitmapscan"
+   ],
+   "with_index": {
+    "ms": 0.202,
+    "min_ms": 0.159,
+    "buffers": 153,
+    "scan": "Index Scan",
+    "indexes": [
+     "orders_*_created_at_idx1"
+    ],
+    "partitions_scanned": 37,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 97.83,
+    "min_ms": 93.762,
+    "buffers": 20426,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 37,
+    "heap_fetches": null,
+    "label": "SET enable_indexscan, enable_bitmapscan = off"
+   },
+   "speedup": 484.3
+  },
+  {
+   "key": "partial_lowstock",
+   "group": "Index",
+   "title": "Sản phẩm sắp hết hàng: partial index",
+   "sql": "SELECT id, name, stock FROM products WHERE stock < 3 AND status = 'active' ORDER BY stock LIMIT 20",
+   "off": [
+    "enable_indexscan",
+    "enable_bitmapscan"
+   ],
+   "with_index": {
+    "ms": 0.02,
+    "min_ms": 0.017,
+    "buffers": 15,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan",
+    "indexes": [
+     "idx_products_low_stock"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 1.714,
+    "min_ms": 1.071,
+    "buffers": 2533,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": null,
+    "heap_fetches": null,
+    "label": "SET enable_indexscan, enable_bitmapscan = off"
+   },
+   "speedup": 85.7
+  },
+  {
+   "key": "matview",
+   "group": "Materialized view",
+   "title": "Doanh thu 30 ngày: matview vs tính trực tiếp",
+   "sql": "SELECT day, revenue FROM mv_sales_daily WHERE day >= current_date - 30 ORDER BY day",
+   "compare": "SELECT date_trunc('day', o.created_at)::date AS day, sum(o.total) FROM orders o\n              WHERE o.created_at >= current_date - 30 AND o.status <> 'cancelled' GROUP BY 1 ORDER BY 1",
+   "with_index": {
+    "ms": 0.018,
+    "min_ms": 0.016,
+    "buffers": 3,
+    "scan": "Bitmap Heap Scan + Bitmap Index Scan",
+    "indexes": [
+     "mv_sales_daily_day_idx"
+    ],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 19.388,
+    "min_ms": 18.763,
+    "buffers": 1349,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 5,
+    "heap_fetches": null,
+    "label": "truy vấn tương đương"
+   },
+   "speedup": 1077.1
+  },
+  {
+   "key": "matview_top",
+   "group": "Materialized view",
+   "title": "Top 10 sản phẩm bán chạy: matview vs JOIN toàn bộ",
+   "sql": "SELECT product_id, qty_sold FROM mv_top_products LIMIT 10",
+   "compare": "SELECT oi.product_id, sum(oi.qty) AS qty_sold FROM order_items oi\n              JOIN orders o ON o.id = oi.order_id AND o.created_at = oi.order_created_at\n              WHERE o.status <> 'cancelled' GROUP BY 1 ORDER BY 2 DESC LIMIT 10",
+   "with_index": {
+    "ms": 0.02,
+    "min_ms": 0.01,
+    "buffers": 37,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": null,
+    "heap_fetches": null
+   },
+   "without_index": {
+    "ms": 1142.225,
+    "min_ms": 1077.828,
+    "buffers": 36911,
+    "scan": "Seq Scan",
+    "indexes": [],
+    "partitions_scanned": 37,
+    "heap_fetches": null,
+    "label": "truy vấn tương đương"
+   },
+   "speedup": 57111.2
+  }
+ ]
+}
