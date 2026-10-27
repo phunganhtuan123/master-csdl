@@ -13,7 +13,7 @@ Tiểu luận môn **Cơ sở dữ liệu** — Nhóm 6: Phùng Anh Tuấn (2541
 | 5 | **Transaction + `SELECT … FOR UPDATE`** | Chống bán quá kho khi nhiều người đặt cùng lúc | `005`, `api/src/routes/orders.js` |
 | 6 | **Materialized View + LISTEN/NOTIFY** | Dashboard tính sẵn; cảnh báo sắp hết hàng real-time qua SSE | `006`, `005`, `api/src/routes/events.js` |
 
-Ngoài ra: partial index, covering index (INCLUDE), expression index, generated column, `pg_stat_statements`, `pgbench`, Grafana.
+Ngoài ra: partial index, covering index (INCLUDE), expression index, generated column, `pg_stat_statements`, `pgbench`, trang Monitor & Benchmark trong admin, tool đo `npm run bench`.
 
 ## Cấu trúc
 
@@ -24,7 +24,6 @@ api/src/seed-big.js 1 triệu đơn hàng để test partition/index · api/src/
 db/benchmark/       EXPLAIN ANALYZE trước/sau index, pgbench, kiểm chứng chống bán quá kho
 api/                Node.js + Fastify + pg  (port 4000)
 web/                Next.js — trang bán hàng (/) và quản trị (/admin)  (port 3000)
-monitoring/         Grafana datasource + dashboard tự động nạp (port 3001)
 docs/               tiểu luận, slide, screenshots
 ```
 
@@ -34,10 +33,10 @@ docs/               tiểu luận, slide, screenshots
 docker compose up -d --build
 # Web:      http://localhost:3000        Admin: http://localhost:3000/admin  (admin / admin123)
 # API:      http://localhost:4000/api/health
-# Grafana:  http://localhost:3001        (admin / admin, dashboard "Jewelry Shop - PostgreSQL Monitor")
+# Monitor:  http://localhost:3000/admin/monitor   (EXPLAIN có/không index, bảng-index-partition, pg_stat_statements)
 # Postgres: localhost:5432  postgres / postgres  db: jewelry
 ```
-Lần đầu container `api` tự chạy `migrate → seed → embed` (~20 giây) rồi mới mở cổng.
+Lần đầu container `api` tự chạy `migrate → seed → embed` (~20 giây) rồi mới mở cổng. Chỉ 3 container: db, api, web.
 
 ## Chạy thủ công (dev)
 

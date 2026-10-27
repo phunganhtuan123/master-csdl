@@ -16,8 +16,8 @@ digraph ARCH {
     ext [label="Extensions\npg_trgm · unaccent\nvector · pg_stat_statements", fillcolor="#f4f4f4", color="#777777"];
   }
   subgraph cluster_mon { label="Giám sát & benchmark"; style="rounded,dashed"; color="#999999";
-    gf  [label="Grafana :3001\n(PostgreSQL datasource)", fillcolor="#fde8e8", color="#b23b3b"];
-    pb  [label="pgbench · EXPLAIN ANALYZE\n(db/benchmark)", fillcolor="#fde8e8", color="#b23b3b"];
+    mon [label="Trang Monitor & Benchmark\n(/admin/monitor)", fillcolor="#fde8e8", color="#b23b3b"];
+    pb  [label="bench.js · pgbench\n(npm run bench)", fillcolor="#fde8e8", color="#b23b3b"];
   }
 
   kh -> web; ad -> web;
@@ -25,5 +25,5 @@ digraph ARCH {
   ad -> api  [label="SSE (EventSource)", style=dashed];
   api -> pg  [label="pool.query($1,$2)\nLISTEN low_stock, new_order"];
   pg -> ext  [arrowhead=none];
-  gf -> pg   [label="SQL"]; pb -> pg;
+  mon -> api [label="pg_stat_*"]; pb -> pg;
 }

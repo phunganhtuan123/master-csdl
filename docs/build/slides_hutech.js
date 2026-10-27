@@ -119,7 +119,7 @@ bullets(s, [
   'PostgreSQL 16 + pgvector · Node.js + Fastify, SQL thuần (không ORM) · Next.js 15 (khách + admin)',
   'Logic quan trọng nằm trong CSDL: hàm place_order(), cancel_order(), trigger NOTIFY',
   '6 file migration SQL; trình chạy migration tự viết 60 dòng, mỗi file = 1 transaction',
-  'docker compose up → db + api + web + Grafana; npm run seed:big → 1 triệu đơn, npm run bench → báo cáo đo',
+  'docker compose up → db + api + web; npm run seed:big → 1 triệu đơn, npm run bench → báo cáo đo',
 ], X0, 3.85, W0, 3.1, 17);
 
 // ====================================================================== 6. ERD
@@ -273,7 +273,7 @@ s.addChart(pres.ChartType.bar, [{
 });
 stat(s, '1 triệu', 'đơn hàng / 37 partition\nnpm run seed:big', 6.7, 1.55, 3.0, THEME.colors.accent3);
 stat(s, '1.090', 'đơn hàng / giây\n30 client đồng thời', 6.7, 3.15, 3.0, THEME.colors.accent5);
-bullets(s, ['Tool đo npm run bench: 12 kịch bản × 5 lần, lấy trung vị, xuất Markdown/JSON', 'Giám sát: pg_stat_statements, Grafana'], 6.7, 4.8, 3.0, 2.1, 13);
+bullets(s, ['Tool đo npm run bench: 12 kịch bản × 5 lần, lấy trung vị, xuất Markdown/JSON', 'Giám sát: pg_stat_statements, trang Monitor trong admin'], 6.7, 4.8, 3.0, 2.1, 13);
 
 // ====================================================================== 16. Kết luận
 pres.addSection({ title: 'Kết luận' });

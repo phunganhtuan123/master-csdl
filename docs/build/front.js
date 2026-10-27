@@ -61,7 +61,7 @@ function reviewPage() {
       [{ w: 1, h: 'STT' }, { w: 4, h: 'Thành viên' }, { w: 9, h: 'Nội dung thực hiện' }, { w: 2.5, h: 'Mức độ' }],
       [
         ['1', 'Phùng Anh Tuấn\n2541864024'.replace('\n', ' – '), 'Thiết kế CSDL, migration, index, hàm PL/pgSQL; backend Node.js; benchmark; viết chương 2, 3, 5', '100%'],
-        ['2', 'Võ Bùi Duy Thông – 2541864019', 'Phân tích nghiệp vụ; giao diện Next.js (khách hàng + quản trị); Docker, Grafana; viết chương 1, 4, kết luận; slide', '100%'],
+        ['2', 'Võ Bùi Duy Thông – 2541864019', 'Phân tích nghiệp vụ; giao diện Next.js (khách hàng + quản trị); Docker; viết chương 1, 4, kết luận; slide', '100%'],
       ], null),
     pageBreak(),
   ];
@@ -119,7 +119,7 @@ function intro() {
       'Phân tích nghiệp vụ bán hàng trang sức và thiết kế CSDL quan hệ phù hợp trên PostgreSQL, có đầy đủ ràng buộc và chỉ mục.',
       'Vận dụng và đánh giá **6 tính năng nổi bật** của PostgreSQL gắn với 6 bài toán nghiệp vụ cụ thể: JSONB; full-text search tiếng Việt; pgvector; partitioning + BRIN; transaction với khoá dòng; materialized view + LISTEN/NOTIFY.',
       'Xây dựng ứng dụng web hoàn chỉnh (trang bán hàng + trang quản trị) với backend Node.js dùng SQL thuần (không ORM) và frontend Next.js; đóng gói triển khai bằng Docker.',
-      'Đo lường hiệu năng bằng EXPLAIN ANALYZE, pgbench và giám sát bằng pg_stat_statements, Grafana.',
+      'Đo lường hiệu năng bằng công cụ đo tự viết (EXPLAIN ANALYZE), pgbench và giám sát bằng pg_stat_statements ngay trong trang quản trị.',
     ]),
     H2('3. Đối tượng và phạm vi nghiên cứu'),
     RP('**Đối tượng:** HQTCSDL PostgreSQL phiên bản 16 và các extension đi kèm (pg_trgm, unaccent, pgvector, pg_stat_statements).'),

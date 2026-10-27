@@ -5,7 +5,7 @@ function chapter4() {
   return [
     H1('Chương 4: Xây dựng ứng dụng'),
     H2('4.1. Kiến trúc tổng thể'),
-    RP('Hệ thống theo mô hình ba tầng: trình duyệt ↔ API ↔ CSDL, đóng gói thành 4 container Docker (db, api, web, grafana). Logic nghiệp vụ quan trọng nhất (đặt hàng, huỷ đơn, thông báo) nằm trong CSDL dưới dạng hàm và trigger; API chủ yếu nhận yêu cầu, gọi SQL và trả JSON.'),
+    RP('Hệ thống theo mô hình ba tầng: trình duyệt ↔ API ↔ CSDL, đóng gói thành 3 container Docker (db, api, web). Logic nghiệp vụ quan trọng nhất (đặt hàng, huỷ đơn, thông báo) nằm trong CSDL dưới dạng hàm và trigger; API chủ yếu nhận yêu cầu, gọi SQL và trả JSON.'),
     ...figure('architecture.jpg', 4, 'Kiến trúc triển khai của hệ thống'),
     ...table(
       [{ w: 3.5, h: 'Thành phần' }, { w: 5, h: 'Công nghệ' }, { w: 7.5, h: 'Lý do chọn' }],
@@ -14,7 +14,7 @@ function chapter4() {
         ['Backend', 'Node.js 22, Fastify 5, thư viện pg', 'Nhẹ, nhanh; `pg` cho phép viết SQL thuần với tham số $1, $2 – đúng yêu cầu không dùng ORM'],
         ['Frontend', 'Next.js 15 (App Router), React 19', 'SSR giúp trang sản phẩm tải nhanh, một dự án cho cả trang khách và trang quản trị'],
         ['Xác thực', 'JWT + bcrypt', 'Đơn giản, không cần phiên trên server'],
-        ['Giám sát', 'pg_stat_statements, Grafana 11 (PostgreSQL datasource), pgbench', 'Không cần Prometheus; Grafana truy vấn thẳng các view thống kê'],
+        ['Giám sát & đo', 'pg_stat_statements, pg_stat_user_*; trang Monitor trong admin; bench.js; pgbench', 'Mọi số liệu lấy thẳng từ view thống kê của PostgreSQL, không cần công cụ ngoài'],
         ['Triển khai', 'Docker Compose', 'Một lệnh dựng toàn bộ; chạy được trên máy cá nhân hoặc VM cloud'],
       ], 4, 'Công nghệ sử dụng'),
     H2('4.2. Backend: SQL thuần với Node.js'),
@@ -87,11 +87,11 @@ export async function tx(fn) {
     ...figure('08-admin-don-hang.jpg', 4, 'Danh sách đơn hàng với bộ lọc trạng thái và khoảng ngày'),
     ...figure('09-admin-san-pham-jsonb.jpg', 4, 'Màn hình sửa sản phẩm – thêm/xoá thuộc tính JSONB và nhập kho', 14),
     H2('4.6. Triển khai bằng Docker Compose'),
-    RP('File `docker-compose.yml` khai báo 4 dịch vụ. Dịch vụ `db` dùng image chính thức của pgvector (PostgreSQL 16 kèm extension vector) với tham số `shared_preload_libraries=pg_stat_statements`; `api` chờ `db` sẵn sàng (healthcheck), chạy migrate → seed → embed rồi mới khởi động; `web` build Next.js ở chế độ standalone; `grafana` tự nạp datasource và dashboard từ thư mục `monitoring`. Toàn bộ hệ thống khởi động bằng một lệnh:'),
+    RP('File `docker-compose.yml` khai báo 3 dịch vụ. Dịch vụ `db` dùng image chính thức của pgvector (PostgreSQL 16 kèm extension vector) với tham số `shared_preload_libraries=pg_stat_statements`; `api` chờ `db` sẵn sàng (healthcheck), chạy migrate → seed → embed rồi mới khởi động; `web` build Next.js ở chế độ standalone. Toàn bộ hệ thống khởi động bằng một lệnh:'),
     ...code(`docker compose up -d --build
 # Web:     http://localhost:3000   (admin: /admin, tài khoản admin / admin123)
 # API:     http://localhost:4000/api/health
-# Grafana: http://localhost:3001   (admin / admin)`),
+# Monitor: http://localhost:3000/admin/monitor`),
     RP('Khi triển khai lên máy chủ thật chỉ cần đổi mật khẩu CSDL, `JWT_SECRET`, `ADMIN_PASSWORD` và gắn volume `pgdata` vào ổ đĩa bền.'),
     pageBreak(),
   ];
@@ -179,7 +179,7 @@ number of transactions actually processed: 5/50     ← chỉ 5 giao dịch thà
       ], 5, 'Kết quả pgbench (máy ảo 2 vCPU, cấu hình PostgreSQL mặc định)'),
     RP('Khoảng một nghìn đơn mỗi giây trên CSDL đã có 1 triệu đơn là dư thừa so với nhu cầu của một cửa hàng trang sức, cho thấy một PostgreSQL đơn lẻ với index phù hợp đủ phục vụ mà không cần cache hay hệ thống tìm kiếm riêng.'),
     H2('5.6. Giám sát'),
-    RP('**pg_stat_statements** ghi nhận mọi câu SQL đã chuẩn hoá: số lần gọi, tổng/trung bình thời gian, số dòng, tỉ lệ cache hit. Trang quản trị hiển thị top 25 câu theo tổng thời gian hoặc số lần gọi và có nút reset – câu nào trung bình chậm là ứng viên để thêm index. **pg_stat_user_tables / pg_stat_user_indexes / pg_inherits** cho biết số dòng, dung lượng, số lần quét tuần tự hay quét index của từng bảng, lượt dùng của từng index (index có `idx_scan = 0` lâu ngày nên xoá) và danh sách partition (Hình 3.8). **Grafana** được cấu hình sẵn datasource PostgreSQL và dashboard 12 panel (kết nối, dung lượng, cache hit, giao dịch, đơn theo giờ, doanh thu 30 ngày từ materialized view, top câu SQL, index usage, số dòng từng partition, sắp hết hàng), tự làm mới 10 giây, truy vấn SQL trực tiếp nên không cần Prometheus.'),
+    RP('**pg_stat_statements** ghi nhận mọi câu SQL đã chuẩn hoá: số lần gọi, tổng/trung bình thời gian, số dòng, tỉ lệ cache hit. Trang quản trị hiển thị top 25 câu theo tổng thời gian hoặc số lần gọi và có nút reset – câu nào trung bình chậm là ứng viên để thêm index. **pg_stat_user_tables / pg_stat_user_indexes / pg_inherits** cho biết số dòng, dung lượng, số lần quét tuần tự hay quét index của từng bảng, lượt dùng của từng index (index có `idx_scan = 0` lâu ngày nên xoá) và danh sách partition (Hình 3.8). Toàn bộ số liệu giám sát được lấy trực tiếp từ các view thống kê của PostgreSQL qua trang **Monitor & Benchmark** trong giao diện quản trị (ba thẻ: Benchmark EXPLAIN có/không index, Bảng – Index – Partition, pg_stat_statements), nên không cần cài thêm công cụ giám sát bên ngoài.'),
     pageBreak(),
   ];
 }
@@ -188,7 +188,7 @@ function conclusion() {
   return [
     H1('Kết luận'),
     H2('1. Kết quả đạt được'),
-    RP('Tiểu luận đã xây dựng hoàn chỉnh một hệ thống bán hàng trang sức trên PostgreSQL 16 gồm lược đồ 8 bảng với đầy đủ ràng buộc, 6 file migration bằng SQL thuần, backend Node.js/Fastify không dùng ORM, frontend Next.js cho khách hàng và quản trị viên, đóng gói Docker Compose kèm Grafana. Quan trọng hơn, mỗi tính năng nổi bật của PostgreSQL được gắn với một bài toán nghiệp vụ thật và được kiểm chứng bằng số liệu:'),
+    RP('Tiểu luận đã xây dựng hoàn chỉnh một hệ thống bán hàng trang sức trên PostgreSQL 16 gồm lược đồ 8 bảng với đầy đủ ràng buộc, 6 file migration bằng SQL thuần, backend Node.js/Fastify không dùng ORM, frontend Next.js cho khách hàng và quản trị viên, đóng gói Docker Compose. Quan trọng hơn, mỗi tính năng nổi bật của PostgreSQL được gắn với một bài toán nghiệp vụ thật và được kiểm chứng bằng số liệu:'),
     ...bullets([
       '**JSONB + GIN** giải quyết thuộc tính khác nhau giữa các loại trang sức, lọc nhanh hơn quét tuần tự ~30 lần.',
       '**Full-text search tiếng Việt** với unaccent và pg_trgm cho phép tìm không dấu, gõ sai chính tả, gợi ý khi gõ – không cần Elasticsearch.',
@@ -224,7 +224,6 @@ function conclusion() {
       'PostgreSQL Global Development Group, *pg_trgm, unaccent, pg_stat_statements – Additional Supplied Modules*, https://www.postgresql.org/docs/16/contrib.html.',
       'Fastify, *Fastify Documentation*, https://fastify.dev/; node-postgres, https://node-postgres.com/.',
       'Vercel, *Next.js 15 Documentation*, https://nextjs.org/docs.',
-      'Grafana Labs, *PostgreSQL data source*, https://grafana.com/docs/grafana/latest/datasources/postgres/.',
       'Đỗ Phúc, *Giáo trình Cơ sở dữ liệu*, NXB Đại học Quốc gia TP.HCM (tài liệu môn học).',
     ], 'refs'),
     pageBreak(),
@@ -252,7 +251,6 @@ bash db/benchmark/run_bench.sh explain | order | search | oversell`),
 ├── api/src/routes/{catalog.js, search.js, orders.js, admin.js, monitor.js, events.js}
 ├── web/app/(shop)/…        trang khách hàng
 ├── web/app/admin/…         trang quản trị
-├── monitoring/grafana/     datasource + dashboard
 ├── docker-compose.yml
 └── README.md`),
     H2('Phụ lục C. Mã nguồn SQL đầy đủ'),

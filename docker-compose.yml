@@ -1,8 +1,8 @@
 # =====================================================================
-# docker compose up -d   -> PostgreSQL 16 + pgvector, API, Web, Grafana
+# docker compose up -d   -> PostgreSQL 16 + pgvector, API, Web
 #   Web (khách + admin) : http://localhost:3000     (admin: /admin, tài khoản admin / admin123)
 #   API                 : http://localhost:4000/api/health
-#   Grafana (monitor)   : http://localhost:3001     (admin / admin)
+#   Monitor/benchmark   : http://localhost:3000/admin/monitor  (trong trang quản trị)
 #   PostgreSQL          : localhost:5432  (postgres / postgres, db jewelry)
 # =====================================================================
 services:
@@ -50,21 +50,6 @@ services:
       API_INTERNAL_URL: http://api:4000
     ports: ["3000:3000"]
     depends_on: [api]
-
-  grafana:
-    image: grafana/grafana:11.3.0
-    container_name: jewelry-grafana
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-    ports: ["3001:3000"]
-    volumes:
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
-    depends_on:
-      db: { condition: service_healthy }
 
 volumes:
   pgdata:
