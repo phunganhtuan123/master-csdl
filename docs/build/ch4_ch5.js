@@ -31,63 +31,19 @@ export async function tx(fn) {
   finally { client.release(); }
 }`),
     H3('4.2.2. Trình chạy migration'),
-    RP('Thay vì dùng thư viện, nhóm tự viết `migrate.js` khoảng 60 dòng để dễ giải thích: đọc thư mục `db/migrations`, so với bảng `schema_migrations`, chạy từng file chưa áp dụng trong một giao dịch rồi ghi lại tên file. Lệnh `npm run migrate -- --reset` xoá schema và chạy lại từ đầu khi phát triển; `npm run reset` = migrate + seed + embed.'),
-    ...code(`for (const file of files) {
-  if (applied.has(file)) continue;
-  await client.query('BEGIN');
-  try {
-    await client.query(fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8'));
-    await client.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [file]);
-    await client.query('COMMIT');
-  } catch (err) { await client.query('ROLLBACK'); throw err; }
-}`),
+    RP('Thay vì dùng thư viện, nhóm tự viết `migrate.js` khoảng 60 dòng: đọc thư mục `db/migrations`, so với bảng `schema_migrations`, chạy từng file chưa áp dụng trong một transaction (BEGIN → chạy SQL → ghi tên file → COMMIT, lỗi thì ROLLBACK) – nhờ PostgreSQL hỗ trợ DDL trong transaction nên không bao giờ có schema “nửa vời”. Lệnh `npm run reset` xoá schema và chạy lại migrate + seed + embed khi phát triển.'),
     H3('4.2.3. Các nhóm API'),
-    ...table(
-      [{ w: 1.8, h: 'Method' }, { w: 6, h: 'Đường dẫn' }, { w: 8.2, h: 'Chức năng – tính năng CSDL sử dụng' }],
-      [
-        ['GET', '/api/categories', 'Danh mục kèm số sản phẩm (count FILTER)'],
-        ['GET', '/api/products?category&metal&stone&min&max&sort&page', 'Danh sách, lọc JSONB `@>`, phân trang với `count(*) OVER()`'],
-        ['GET', '/api/products/filters', 'Giá trị bộ lọc lấy từ JSONB'],
-        ['GET', '/api/products/:slug', 'Chi tiết + ảnh phụ (json_agg)'],
-        ['GET', '/api/products/:slug/similar', 'pgvector `<=>` + HNSW'],
-        ['GET', '/api/search?q · /api/search/suggest?q', 'Full-text → trigram; gợi ý prefix'],
-        ['POST', '/api/orders', '`place_order()` – transaction + FOR UPDATE'],
-        ['GET', '/api/orders/:id?phone', 'Khách tra cứu đơn'],
-        ['POST', '/api/admin/login', 'JWT 12 giờ'],
-        ['GET', '/api/admin/dashboard', 'Materialized view + partial index + partition tháng hiện tại'],
-        ['POST', '/api/admin/reports/refresh', 'REFRESH MATERIALIZED VIEW CONCURRENTLY'],
-        ['GET/POST/PUT', '/api/admin/products…', 'CRUD, tính embedding; POST /:id/stock nhập kho trong transaction'],
-        ['GET/PATCH', '/api/admin/orders… /status', 'Lọc theo khoảng ngày (pruning); huỷ qua `cancel_order()`'],
-        ['GET', '/api/admin/events?token', 'SSE từ LISTEN/NOTIFY'],
-        ['GET', '/api/admin/monitor/overview · statements · explain/:key', 'pg_stat_user_tables/indexes, pg_stat_statements, EXPLAIN ANALYZE'],
-      ], 4, 'Danh sách API'),
+    RP('API chia thành sáu file theo nghiệp vụ: `catalog.js` (danh mục, danh sách lọc JSONB, chi tiết, gợi ý pgvector), `search.js` (full-text → trigram, gợi ý khi gõ), `orders.js` (đặt hàng qua `place_order()`, tra cứu đơn), `admin.js` (đăng nhập JWT, dashboard từ materialized view, CRUD sản phẩm có tính lại embedding, nhập kho, duyệt/huỷ đơn qua `cancel_order()`), `events.js` (LISTEN/NOTIFY → Server-Sent Events) và `monitor.js` (pg_stat_statements, thống kê bảng/index/partition, chạy EXPLAIN có/không index cho trang Benchmark).'),
     H2('4.3. Frontend Next.js'),
-    RP('Ứng dụng web gồm hai khu vực trong cùng một dự án Next.js. Trang khách hàng dùng Server Components để gọi API và kết xuất HTML phía máy chủ (tải nhanh, thân thiện SEO); giỏ hàng lưu trong localStorage vì chưa cần ghi vào CSDL trước khi đặt. Trang quản trị là Client Components, giữ JWT trong localStorage, mở một kết nối EventSource để nhận thông báo từ PostgreSQL.'),
-    ...table(
-      [{ w: 5, h: 'Đường dẫn' }, { w: 11, h: 'Màn hình' }],
-      [
-        ['/', 'Trang chủ: danh mục, sản phẩm nổi bật, thanh tìm kiếm có gợi ý'],
-        ['/san-pham', 'Danh sách với bộ lọc danh mục / chất liệu / đá / giá, sắp xếp, phân trang'],
-        ['/san-pham/[slug]', 'Chi tiết, bảng thông số JSONB, thêm vào giỏ, 8 sản phẩm tương tự'],
-        ['/tim-kiem?q=', 'Kết quả tìm kiếm, hiển thị chế độ full-text hay trigram'],
-        ['/gio-hang', 'Giỏ hàng và biểu mẫu đặt hàng'],
-        ['/tra-cuu · /don-hang/[id]', 'Tra cứu đơn bằng mã + số điện thoại'],
-        ['/admin/login', 'Đăng nhập quản trị'],
-        ['/admin', 'Dashboard: số liệu hôm nay, biểu đồ 30 ngày, doanh thu theo danh mục, top sản phẩm, sắp hết hàng'],
-        ['/admin/san-pham · /admin/san-pham/[id]', 'Danh sách, thêm/sửa sản phẩm, chỉnh thuộc tính JSONB, nhập kho, nhật ký kho'],
-        ['/admin/don-hang · /admin/don-hang/[id]', 'Danh sách lọc theo trạng thái/ngày, chi tiết và chuyển trạng thái / huỷ'],
-        ['/admin/monitor', 'Benchmark EXPLAIN có/không index; bảng – index – partition; pg_stat_statements'],
-      ], 4, 'Các màn hình của ứng dụng'),
+    RP('Ứng dụng web gồm hai khu vực trong cùng một dự án Next.js. **Trang khách hàng** (`/`, `/san-pham`, `/san-pham/[slug]`, `/tim-kiem`, `/gio-hang`, `/tra-cuu`) dùng Server Components để gọi API và kết xuất HTML phía máy chủ; giỏ hàng lưu trong localStorage vì chưa cần ghi vào CSDL trước khi đặt. **Trang quản trị** (`/admin`, `/admin/san-pham`, `/admin/don-hang`, `/admin/monitor`) là Client Components, giữ JWT trong localStorage và mở một kết nối EventSource để nhận thông báo từ PostgreSQL.'),
     H2('4.4. Giao diện khách hàng'),
-    ...figure('01-trang-chu.jpg', 4, 'Trang chủ', 14),
     ...figure('02-danh-sach-loc-jsonb.jpg', 4, 'Danh sách sản phẩm lọc theo danh mục Nhẫn và chất liệu Vàng 18K (JSONB)', 14),
     ...figure('06-gio-hang-dat-hang.jpg', 4, 'Giỏ hàng và biểu mẫu đặt hàng'),
     H2('4.5. Giao diện quản trị'),
     ...figure('07-admin-dashboard.jpg', 4, 'Dashboard quản trị (dữ liệu từ materialized view)', 14),
-    ...figure('08-admin-don-hang.jpg', 4, 'Danh sách đơn hàng với bộ lọc trạng thái và khoảng ngày'),
     ...figure('09-admin-san-pham-jsonb.jpg', 4, 'Màn hình sửa sản phẩm – thêm/xoá thuộc tính JSONB và nhập kho', 14),
     H2('4.6. Triển khai bằng Docker Compose'),
-    RP('File `docker-compose.yml` khai báo 3 dịch vụ. Dịch vụ `db` dùng image chính thức của pgvector (PostgreSQL 16 kèm extension vector) với tham số `shared_preload_libraries=pg_stat_statements`; `api` chờ `db` sẵn sàng (healthcheck), chạy migrate → seed → embed rồi mới khởi động; `web` build Next.js ở chế độ standalone. Toàn bộ hệ thống khởi động bằng một lệnh:'),
+    RP('File `docker-compose.yml` khai báo 3 dịch vụ: `db` (image chính thức pgvector/pgvector:pg16, bật pg_stat_statements), `api` (chờ db sẵn sàng rồi tự chạy migrate → seed → embed trước khi mở cổng) và `web` (Next.js standalone). Cổng 5432 được mở ra ngoài để kết nối DBeaver/psql trực tiếp vào CSDL.'),
     ...code(`docker compose up -d --build
 # Web:     http://localhost:3000   (admin: /admin, tài khoản admin / admin123)
 # API:     http://localhost:4000/api/health
@@ -179,7 +135,7 @@ number of transactions actually processed: 5/50     ← chỉ 5 giao dịch thà
       ], 5, 'Kết quả pgbench (máy ảo 2 vCPU, cấu hình PostgreSQL mặc định)'),
     RP('Khoảng một nghìn đơn mỗi giây trên CSDL đã có 1 triệu đơn là dư thừa so với nhu cầu của một cửa hàng trang sức, cho thấy một PostgreSQL đơn lẻ với index phù hợp đủ phục vụ mà không cần cache hay hệ thống tìm kiếm riêng.'),
     H2('5.6. Giám sát'),
-    RP('**pg_stat_statements** ghi nhận mọi câu SQL đã chuẩn hoá: số lần gọi, tổng/trung bình thời gian, số dòng, tỉ lệ cache hit. Trang quản trị hiển thị top 25 câu theo tổng thời gian hoặc số lần gọi và có nút reset – câu nào trung bình chậm là ứng viên để thêm index. **pg_stat_user_tables / pg_stat_user_indexes / pg_inherits** cho biết số dòng, dung lượng, số lần quét tuần tự hay quét index của từng bảng, lượt dùng của từng index (index có `idx_scan = 0` lâu ngày nên xoá) và danh sách partition (Hình 3.8). Toàn bộ số liệu giám sát được lấy trực tiếp từ các view thống kê của PostgreSQL qua trang **Monitor & Benchmark** trong giao diện quản trị (ba thẻ: Benchmark EXPLAIN có/không index, Bảng – Index – Partition, pg_stat_statements), nên không cần cài thêm công cụ giám sát bên ngoài.'),
+    RP('**pg_stat_statements** ghi nhận mọi câu SQL đã chuẩn hoá: số lần gọi, tổng/trung bình thời gian, số dòng, tỉ lệ cache hit. Trang quản trị hiển thị top 25 câu theo tổng thời gian hoặc số lần gọi và có nút reset – câu nào trung bình chậm là ứng viên để thêm index. **pg_stat_user_tables / pg_stat_user_indexes / pg_inherits** cho biết số dòng, dung lượng, số lần quét tuần tự hay quét index của từng bảng, lượt dùng của từng index (index có `idx_scan = 0` lâu ngày nên xoá) và danh sách partition (thẻ Bảng · Index · Partition trong trang quản trị). Toàn bộ số liệu giám sát được lấy trực tiếp từ các view thống kê của PostgreSQL qua trang **Monitor & Benchmark** trong giao diện quản trị (ba thẻ: Benchmark EXPLAIN có/không index, Bảng – Index – Partition, pg_stat_statements), nên không cần cài thêm công cụ giám sát bên ngoài.'),
     pageBreak(),
   ];
 }
@@ -228,33 +184,58 @@ function conclusion() {
     ], 'refs'),
     pageBreak(),
     H1('Phụ lục'),
-    H2('Phụ lục A. Hướng dẫn cài đặt và chạy'),
-    ...code(`# Cách 1: Docker (khuyến nghị)
-git clone <repo> jewelry-shop-postgres && cd jewelry-shop-postgres
-docker compose up -d --build
+    H2('Phụ lục A. Cài đặt và chạy trên máy cá nhân'),
+    RP('Yêu cầu duy nhất: Docker Desktop (Mac/Windows) hoặc Docker Engine (Linux).'),
+    ...code(`git clone https://github.com/phunganhtuan123/master-csdl.git
+cd master-csdl
+docker compose up -d --build       # lần đầu 2-3 phút: build image, migrate, seed, embed
+docker compose logs -f api         # chờ dòng "LISTEN low_stock, new_order" là xong
 
-# Cách 2: chạy tay (cần PostgreSQL 16 + pgvector)
-cd api && cp .env.example .env && npm install
-npm run migrate && npm run seed && npm run embed && npm run dev      # API :4000
-npm run seed:big   # (tuỳ chọn) sinh 1 triệu đơn hàng để test partition/index
-npm run bench      # công cụ đo -> docs/benchmark/bench-report.md
-cd ../web && npm install && npm run dev                              # Web :3000
+# Web khách hàng : http://localhost:3000
+# Trang quản trị : http://localhost:3000/admin   (admin / admin123)
+# PostgreSQL     : localhost:5432  db jewelry  user postgres  pass postgres
 
-# Benchmark
-bash db/benchmark/run_bench.sh explain | order | search | oversell`),
-    H2('Phụ lục B. Cấu trúc mã nguồn'),
+docker compose exec api npm run seed:big   # (tuỳ chọn) thêm 1 triệu đơn hàng, ~2 phút
+docker compose exec api npm run bench      # chạy công cụ đo, in bảng kết quả
+docker compose down -v                     # xoá sạch để làm lại từ đầu`),
+    H2('Phụ lục B. Kết nối DBeaver và các câu lệnh demo'),
+    RP('Trong DBeaver chọn **Database → New Database Connection → PostgreSQL**, điền Host `localhost`, Port `5432`, Database `jewelry`, Username `postgres`, Password `postgres`, bấm Test Connection rồi Finish. Mở file `db/demo/demo_queries.sql` (File → Open), chọn từng khối lệnh và bấm Ctrl+Enter (Cmd+Enter). File gồm 8 mục đánh số trùng với chương 3: tổng quan dữ liệu; JSONB; full-text search; pgvector; partition; transaction chống bán quá kho (có hướng dẫn mở 2 tab SQL để thấy giao dịch thứ hai bị chờ); materialized view và NOTIFY; các index khác; giám sát. Một số lệnh tiêu biểu:'),
+    ...code(`-- JSONB: lọc theo thuộc tính (GIN index)
+SELECT sku, name, price FROM products
+WHERE attributes @> '{"metal":"Vàng trắng 18K","stone":"Kim cương"}';
+
+-- Full-text không dấu + trigram sai chính tả
+SELECT name FROM products WHERE search_vec @@ plainto_tsquery('simple', vi_unaccent('nhan kim cuong 18k'));
+SELECT name FROM products WHERE vi_unaccent(name) % 'nhan kim cuog solitare';
+
+-- pgvector: 8 sản phẩm giống NK-001
+SELECT p.name, 1 - (p.embedding <=> me.embedding) AS similarity
+FROM products p, (SELECT embedding FROM products WHERE sku='NK-001') me
+ORDER BY p.embedding <=> me.embedding LIMIT 8;
+
+-- Partition pruning: EXPLAIN chỉ thấy 1 partition
+EXPLAIN (ANALYZE, COSTS OFF) SELECT count(*), sum(total) FROM orders
+WHERE created_at >= '2026-09-01' AND created_at < '2026-09-15';
+
+-- Đặt hàng: lần 2 báo OUT_OF_STOCK
+UPDATE products SET stock = 1 WHERE sku = 'NK-002';
+SELECT * FROM place_order('{"full_name":"A","phone":"0900000001"}', '[{"product_id":2,"qty":1}]');
+SELECT * FROM place_order('{"full_name":"B","phone":"0900000002"}', '[{"product_id":2,"qty":1}]');
+
+-- Materialized view vs tính trực tiếp
+SELECT name, qty_sold FROM mv_top_products LIMIT 5;
+SELECT refresh_sales_reports();`),
+    H2('Phụ lục C. Cấu trúc mã nguồn'),
     ...code(`jewelry-shop-postgres/
-├── db/migrations/001_extensions.sql … 006_reports_matview.sql
-├── db/seed/seed.sql
-├── db/benchmark/{explain_before_after.sql, pgbench_*.sql, oversell_test.sql, run_bench.sh}
-├── api/src/{server.js, db.js, migrate.js, seed.js, seed-big.js, embed.js, embedding.js, bench.js}
-├── api/src/routes/{catalog.js, search.js, orders.js, admin.js, monitor.js, events.js}
-├── web/app/(shop)/…        trang khách hàng
-├── web/app/admin/…         trang quản trị
-├── docker-compose.yml
-└── README.md`),
-    H2('Phụ lục C. Mã nguồn SQL đầy đủ'),
-    RP('Toàn bộ 6 file migration (khoảng 400 dòng SQL có chú thích tiếng Việt) và file seed được đính kèm trong thư mục `db/` của mã nguồn nộp kèm tiểu luận.'),
+├── docker-compose.yml      db + api + web
+├── db/migrations/          001_extensions … 006_reports_matview (SQL thuần, có chú thích)
+├── db/seed/seed.sql        dữ liệu mẫu
+├── db/demo/demo_queries.sql  câu lệnh demo cho DBeaver
+├── db/benchmark/           pgbench: đặt hàng đồng thời, chống bán quá kho
+├── api/src/                server.js, db.js, migrate.js, seed.js, seed-big.js, embed.js, bench.js, routes/
+├── web/app/(shop)/         trang khách hàng
+├── web/app/admin/          trang quản trị
+└── docs/                   tiểu luận, slide, benchmark/bench-report.md`),
   ];
 }
 

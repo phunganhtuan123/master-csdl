@@ -18,16 +18,8 @@ function chapter1() {
         ['4', 'PostgreSQL', 'Quan hệ, đa mô hình', 'Mã nguồn mở (PostgreSQL License)', 'Tăng'],
         ['5', 'MongoDB', 'Tài liệu (NoSQL)', 'SSPL', 'Tăng nhẹ'],
       ], 1, 'Top 5 hệ quản trị CSDL theo DB-Engines (2026) [1]'),
-    H2('1.3. Kiến trúc tổng quát'),
-    RP('PostgreSQL dùng mô hình **tiến trình (process-per-connection)**: tiến trình chính `postmaster` lắng nghe kết nối và sinh ra một tiến trình `backend` cho mỗi phiên làm việc; các tiến trình nền khác đảm nhiệm ghi WAL, checkpoint, autovacuum, thống kê. Dữ liệu được đệm trong vùng nhớ dùng chung `shared_buffers`.'),
-    RP('Ba cơ chế nền tảng tạo nên độ tin cậy của PostgreSQL:'),
-    ...bullets([
-      '**MVCC (Multi-Version Concurrency Control):** mỗi lần cập nhật tạo một phiên bản mới của dòng dữ liệu thay vì ghi đè; người đọc không chặn người ghi và ngược lại. Phiên bản cũ được dọn bởi VACUUM.',
-      '**WAL (Write-Ahead Log):** mọi thay đổi được ghi vào nhật ký trước khi ghi vào file dữ liệu, bảo đảm tính bền vững (Durability) và là nền của sao lưu điểm thời gian, streaming replication.',
-      '**Giao dịch ACID đầy đủ** với 4 mức cô lập, trong đó DDL (CREATE/ALTER) cũng nằm trong giao dịch – tính chất rất hữu ích cho migration.',
-    ]),
-    H2('1.4. Hệ sinh thái tính năng và extension'),
-    RP('Khác với các HQTCSDL “chỉ quan hệ”, PostgreSQL được gọi là hệ CSDL **đa mô hình**: ngoài bảng và SQL chuẩn, nó hỗ trợ sẵn kiểu dữ liệu JSONB, mảng, kiểu khoảng (range), kiểu hình học, tìm kiếm toàn văn, nhiều phương pháp index (B-tree, Hash, GIN, GiST, SP-GiST, BRIN), bảng phân vùng khai báo, materialized view, trigger, hàm lưu trữ bằng nhiều ngôn ngữ (PL/pgSQL, Python, JavaScript…) và cơ chế thông báo LISTEN/NOTIFY. Cơ chế **extension** cho phép bổ sung kiểu dữ liệu, toán tử và loại index mới mà không sửa lõi; những extension tiêu biểu là PostGIS (không gian địa lý), pgvector (vector cho AI), pg_trgm (tìm kiếm gần đúng), TimescaleDB (chuỗi thời gian), Citus (phân tán).'),
+    H2('1.3. Hệ sinh thái tính năng và extension'),
+    RP('PostgreSQL có giao dịch ACID đầy đủ với MVCC (người đọc không chặn người ghi), nhật ký WAL và DDL nằm trong transaction. Khác với các HQTCSDL “chỉ quan hệ”, PostgreSQL được gọi là hệ CSDL **đa mô hình**: ngoài bảng và SQL chuẩn, nó hỗ trợ sẵn kiểu dữ liệu JSONB, mảng, kiểu khoảng (range), kiểu hình học, tìm kiếm toàn văn, nhiều phương pháp index (B-tree, Hash, GIN, GiST, SP-GiST, BRIN), bảng phân vùng khai báo, materialized view, trigger, hàm lưu trữ bằng nhiều ngôn ngữ (PL/pgSQL, Python, JavaScript…) và cơ chế thông báo LISTEN/NOTIFY. Cơ chế **extension** cho phép bổ sung kiểu dữ liệu, toán tử và loại index mới mà không sửa lõi; những extension tiêu biểu là PostGIS (không gian địa lý), pgvector (vector cho AI), pg_trgm (tìm kiếm gần đúng), TimescaleDB (chuỗi thời gian), Citus (phân tán).'),
     ...table(
       [{ w: 4, h: 'Nhu cầu' }, { w: 4.5, h: 'PostgreSQL' }, { w: 4, h: 'MySQL' }, { w: 4, h: 'MongoDB' }],
       [
@@ -39,7 +31,7 @@ function chapter1() {
         ['Thông báo sự kiện', 'LISTEN/NOTIFY tích hợp', 'Không có', 'Change Streams'],
         ['Giấy phép', 'Mở hoàn toàn', 'GPL/thương mại (Oracle)', 'SSPL'],
       ], 1, 'So sánh PostgreSQL với MySQL và MongoDB ở các nhu cầu của đề tài'),
-    H2('1.5. Lý do lựa chọn PostgreSQL cho hệ thống bán hàng trang sức'),
+    H2('1.4. Lý do lựa chọn PostgreSQL cho hệ thống bán hàng trang sức'),
     RP('Từ phân tích trên, PostgreSQL phù hợp với đề tài vì: (1) vẫn là CSDL quan hệ nên bảo đảm tính toàn vẹn cho đơn hàng – tồn kho – thanh toán; (2) JSONB giải quyết thuộc tính khác nhau giữa các loại trang sức; (3) full-text search và pg_trgm xử lý tìm kiếm tiếng Việt ngay trong CSDL; (4) pgvector cho phép thêm tính năng gợi ý sản phẩm theo hướng AI mà không cần hệ thống riêng; (5) partitioning, BRIN, materialized view đáp ứng dữ liệu đơn hàng lớn dần; (6) LISTEN/NOTIFY thay thế hàng đợi thông báo. Tất cả nằm trong một hệ thống duy nhất, miễn phí, dễ vận hành bằng Docker.'),
     pageBreak(),
   ];
@@ -69,28 +61,11 @@ function chapter2() {
         ['9', 'Xử lý đơn', 'Admin', 'Chuyển trạng thái; huỷ phải trả kho trong cùng giao dịch'],
         ['10', 'Giám sát CSDL', 'Admin', 'Thống kê câu SQL, index, partition; chạy EXPLAIN so sánh'],
       ], 2, 'Danh sách chức năng và yêu cầu dữ liệu'),
-    H2('2.2. Yêu cầu phi chức năng'),
-    ...bullets([
-      '**Toàn vẹn dữ liệu:** tồn kho không bao giờ âm; tổng tiền đơn hàng do CSDL tính; khoá ngoại đầy đủ.',
-      '**Hiệu năng:** các truy vấn trang khách hàng dưới 10 ms với hơn 3.000 sản phẩm; báo cáo dashboard không phụ thuộc số lượng đơn.',
-      '**Mở rộng:** thêm thuộc tính sản phẩm hoặc tháng mới không cần sửa lược đồ bằng tay.',
-      '**Khả năng triển khai:** chạy được bằng một lệnh `docker compose up`.',
-    ]),
-    H2('2.3. Sơ đồ thực thể – quan hệ (ERD)'),
+    H2('2.2. Sơ đồ thực thể – quan hệ (ERD)'),
     RP('Lược đồ gồm 8 bảng, chia thành ba nhóm: danh mục – sản phẩm (categories, products, product_images), bán hàng (customers, orders, order_items), vận hành (stock_movements, admins). Các cột tô màu là nơi áp dụng tính năng đặc biệt của PostgreSQL.'),
     ...figure('erd.jpg', 2, 'Sơ đồ thực thể – quan hệ của hệ thống'),
-    H2('2.4. Mô tả chi tiết các bảng'),
-    H3('2.4.1. Bảng categories – danh mục'),
-    ...table(
-      [{ w: 3.2, h: 'Cột' }, { w: 3, h: 'Kiểu' }, { w: 2.3, h: 'Ràng buộc' }, { w: 7.5, h: 'Mô tả' }],
-      [
-        ['id', 'SERIAL', 'PK', 'Mã danh mục'],
-        ['slug', 'TEXT', 'UNIQUE, NOT NULL', 'Định danh trên URL (`nhan-cuoi`)'],
-        ['name', 'TEXT', 'NOT NULL', 'Tên hiển thị'],
-        ['parent_id', 'INT', 'FK → categories', 'Danh mục cha (Nhẫn → Nhẫn cưới), cho phép cây danh mục'],
-        ['created_at', 'TIMESTAMPTZ', 'DEFAULT now()', 'Thời điểm tạo'],
-      ], 2, 'Cấu trúc bảng categories'),
-    H3('2.4.2. Bảng products – sản phẩm'),
+    H2('2.3. Mô tả chi tiết các bảng'),
+    H3('2.3.1. Bảng products – sản phẩm'),
     RP('Đây là bảng trung tâm, chứa ba cột đặc biệt: `attributes` (JSONB), `search_vec` (tsvector sinh tự động) và `embedding` (vector 256 chiều).'),
     ...table(
       [{ w: 3.2, h: 'Cột' }, { w: 3, h: 'Kiểu' }, { w: 2.3, h: 'Ràng buộc' }, { w: 7.5, h: 'Mô tả' }],
@@ -110,16 +85,7 @@ function chapter2() {
         ['search_vec', 'TSVECTOR', 'GENERATED STORED', 'Tự tính từ name (trọng số A) + description (trọng số B), đã bỏ dấu'],
         ['created_at, updated_at', 'TIMESTAMPTZ', 'DEFAULT now()', 'updated_at cập nhật bằng trigger'],
       ], 2, 'Cấu trúc bảng products'),
-    H3('2.4.3. Bảng customers – khách hàng'),
-    ...table(
-      [{ w: 3.2, h: 'Cột' }, { w: 3, h: 'Kiểu' }, { w: 2.3, h: 'Ràng buộc' }, { w: 7.5, h: 'Mô tả' }],
-      [
-        ['id', 'BIGSERIAL', 'PK', ''],
-        ['full_name', 'TEXT', 'NOT NULL', 'Họ tên'],
-        ['phone', 'TEXT', 'UNIQUE, NOT NULL', 'Số điện thoại – khoá nhận diện khách, dùng cho upsert khi đặt hàng'],
-        ['email, address', 'TEXT', '', 'Email có expression index `lower(email)`'],
-      ], 2, 'Cấu trúc bảng customers'),
-    H3('2.4.4. Bảng orders – đơn hàng (phân vùng theo tháng)'),
+    H3('2.3.2. Bảng orders – đơn hàng (phân vùng theo tháng)'),
     RP('Bảng `orders` được khai báo `PARTITION BY RANGE (created_at)`, mỗi tháng một partition con (`orders_2026_01` … `orders_2026_12`) và một partition mặc định. Khoá chính bắt buộc chứa cột phân vùng nên là `(id, created_at)`.'),
     ...table(
       [{ w: 3.2, h: 'Cột' }, { w: 3, h: 'Kiểu' }, { w: 2.3, h: 'Ràng buộc' }, { w: 7.5, h: 'Mô tả' }],
@@ -133,7 +99,7 @@ function chapter2() {
         ['total', 'NUMERIC(14,0)', 'GENERATED ALWAYS AS (subtotal + shipping_fee)', 'Tổng tiền do PostgreSQL tính, ứng dụng không thể ghi sai'],
         ['note', 'TEXT', '', 'Ghi chú của khách'],
       ], 2, 'Cấu trúc bảng orders'),
-    H3('2.4.5. Bảng order_items – chi tiết đơn hàng'),
+    H3('2.3.3. Bảng order_items – chi tiết đơn hàng'),
     ...table(
       [{ w: 3.2, h: 'Cột' }, { w: 3, h: 'Kiểu' }, { w: 2.3, h: 'Ràng buộc' }, { w: 7.5, h: 'Mô tả' }],
       [
@@ -144,16 +110,18 @@ function chapter2() {
         ['unit_price', 'NUMERIC(14,0)', '', 'Giá tại thời điểm mua (giá sản phẩm có thể đổi sau)'],
         ['line_total', 'NUMERIC(14,0)', 'GENERATED (qty × unit_price)', 'Thành tiền'],
       ], 2, 'Cấu trúc bảng order_items'),
-    H3('2.4.6. Các bảng còn lại'),
+    H3('2.3.4. Các bảng còn lại'),
     ...table(
       [{ w: 3.5, h: 'Bảng' }, { w: 12.5, h: 'Vai trò và các cột chính' }],
       [
+        ['categories', 'Danh mục: id, slug (UNIQUE, dùng trên URL), name, parent_id (FK tự tham chiếu → danh mục con, ví dụ Nhẫn → Nhẫn cưới).'],
+        ['customers', 'Khách hàng: id, full_name, phone (UNIQUE – khoá nhận diện, dùng upsert khi đặt hàng), email (expression index lower(email)), address.'],
         ['product_images', 'Ảnh phụ của sản phẩm: product_id (FK, ON DELETE CASCADE), url, sort_order.'],
         ['stock_movements', 'Nhật ký xuất/nhập kho để truy vết vì sao tồn kho thay đổi: product_id, delta (âm = bán, dương = nhập/huỷ đơn), reason (order/cancel/import/adjust), ref_id (mã đơn liên quan), created_at.'],
         ['admins', 'Tài khoản quản trị: username (UNIQUE), password_hash (bcrypt), full_name.'],
         ['schema_migrations', 'Bảng kỹ thuật ghi nhớ file migration nào đã chạy (filename, applied_at).'],
       ], 2, 'Các bảng phụ trợ'),
-    H2('2.5. Ràng buộc toàn vẹn và trigger'),
+    H2('2.4. Ràng buộc toàn vẹn và trigger'),
     ...bullets([
       '**Khoá ngoại** đầy đủ giữa các bảng; `product_images` xoá theo sản phẩm (CASCADE), `order_items` xoá theo đơn.',
       '**CHECK:** `price ≥ 0`, `stock ≥ 0`, `qty > 0`, `status` thuộc tập giá trị cho phép.',
@@ -162,7 +130,7 @@ function chapter2() {
       '**Trigger:** `set_updated_at` (cập nhật updated_at), `notify_low_stock` (bắn NOTIFY khi stock < 3), `notify_new_order` (bắn NOTIFY khi có đơn mới).',
       '**Hàm nghiệp vụ:** `place_order()` và `cancel_order()` gói trọn logic đặt/huỷ đơn trong một giao dịch (trình bày ở chương 3).',
     ]),
-    H2('2.6. Tổ chức migration'),
+    H2('2.5. Tổ chức migration'),
     RP('Lược đồ được viết bằng SQL thuần trong 6 file đánh số thứ tự; mỗi file tập trung vào một chủ đề để dễ trình bày và dễ bảo trì. Trình chạy migration (viết khoảng 60 dòng Node.js, mục 4.3) ghi nhớ file đã chạy trong bảng `schema_migrations` và chạy từng file trong một giao dịch – nhờ PostgreSQL hỗ trợ DDL trong transaction nên nếu một file lỗi giữa chừng thì toàn bộ thay đổi của file đó được huỷ.'),
     ...table(
       [{ w: 5, h: 'File' }, { w: 11, h: 'Nội dung' }],

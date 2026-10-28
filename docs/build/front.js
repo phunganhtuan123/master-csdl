@@ -87,7 +87,6 @@ function tocPages() {
         ['SQL', 'Structured Query Language', 'Ngôn ngữ truy vấn có cấu trúc'],
         ['ORM', 'Object-Relational Mapping', 'Ánh xạ đối tượng – quan hệ (thư viện trung gian giữa code và SQL)'],
         ['API', 'Application Programming Interface', 'Giao diện lập trình ứng dụng'],
-        ['REST', 'Representational State Transfer', 'Kiến trúc API dựa trên HTTP'],
         ['JSON / JSONB', 'JavaScript Object Notation (Binary)', 'Định dạng dữ liệu dạng cặp khoá–giá trị; JSONB là dạng nhị phân có index trong PostgreSQL'],
         ['FTS', 'Full-Text Search', 'Tìm kiếm toàn văn'],
         ['GIN', 'Generalized Inverted Index', 'Chỉ mục đảo ngược tổng quát'],
@@ -95,12 +94,8 @@ function tocPages() {
         ['HNSW', 'Hierarchical Navigable Small World', 'Thuật toán index tìm láng giềng gần nhất cho vector'],
         ['MVCC', 'Multi-Version Concurrency Control', 'Điều khiển đồng thời đa phiên bản'],
         ['ACID', 'Atomicity, Consistency, Isolation, Durability', 'Bốn tính chất của giao dịch'],
-        ['WAL', 'Write-Ahead Log', 'Nhật ký ghi trước'],
         ['SSE', 'Server-Sent Events', 'Cơ chế máy chủ đẩy sự kiện xuống trình duyệt'],
         ['JWT', 'JSON Web Token', 'Chuỗi xác thực phiên đăng nhập'],
-        ['TPS', 'Transactions Per Second', 'Số giao dịch mỗi giây'],
-        ['ERD', 'Entity Relationship Diagram', 'Sơ đồ thực thể – quan hệ'],
-        ['SSR', 'Server-Side Rendering', 'Kết xuất giao diện phía máy chủ'],
       ], null),
     pageBreak(),
   ];
@@ -135,10 +130,10 @@ function intro() {
     RP('Ngoài phần mở đầu, kết luận, tài liệu tham khảo và phụ lục, tiểu luận gồm 5 chương:'),
     ...bullets([
       '**Chương 1 – Tổng quan về PostgreSQL:** lịch sử, kiến trúc, vị trí trên thị trường, lý do lựa chọn.',
-      '**Chương 2 – Phân tích nghiệp vụ và thiết kế cơ sở dữ liệu:** yêu cầu, ERD, mô tả từng bảng, ràng buộc.',
+      '**Chương 2 – Phân tích nghiệp vụ và thiết kế cơ sở dữ liệu:** chức năng, ERD, mô tả từng bảng, ràng buộc, migration.',
       '**Chương 3 – Các tính năng nổi bật của PostgreSQL áp dụng trong hệ thống:** 6 tính năng chính và hệ thống chỉ mục.',
       '**Chương 4 – Xây dựng ứng dụng:** kiến trúc, backend, frontend, giao diện, triển khai Docker.',
-      '**Chương 5 – Kiểm thử, benchmark và giám sát:** kết quả đo lường, kiểm chứng tính đúng đắn, công cụ giám sát.',
+      '**Chương 5 – Kiểm thử, benchmark và giám sát:** dữ liệu 1 triệu đơn, công cụ đo, kết quả có/không index, kiểm chứng đồng thời, giám sát.',
     ]),
     pageBreak(),
   ];

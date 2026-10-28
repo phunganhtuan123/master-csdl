@@ -22,21 +22,9 @@ CREATE INDEX idx_products_attributes ON products USING GIN (attributes jsonb_pat
 {"metal":"Vàng trắng 18K","weight_g":2.8,"ring_size":12,"stone":"Kim cương","carat":0.5,"color":"F","clarity":"VS1"}
 {"metal":"Vàng 24K","weight_g":37.5,"length_cm":50,"style":"Xích","gender":"Nam"}
 {"stone":"Cẩm thạch","color":"Xanh","diameter_mm":56,"origin":"Myanmar","certified":true}`),
-    RP('Ở tầng API, các tham số lọc trên URL được gom thành một đối tượng JSON rồi so khớp bằng `@>` – một câu SQL duy nhất cho mọi tổ hợp thuộc tính:'),
-    ...code(`// api/src/routes/catalog.js
-const attrFilter = {};
-if (metal)  attrFilter.metal  = metal;
-if (stone)  attrFilter.stone  = stone;
-if (gender) attrFilter.gender = gender;
-where.push(\`p.attributes @> \${add(JSON.stringify(attrFilter))}::jsonb\`);
-
--- Bộ lọc bên trái trang danh sách cũng lấy từ JSONB:
-SELECT attributes->>'metal' AS v, count(*) FROM products
-WHERE status='active' AND attributes ? 'metal' GROUP BY 1 ORDER BY 2 DESC;`),
+    RP('Ở tầng API, các tham số lọc trên URL (chất liệu, đá, giới tính) được gom thành một đối tượng JSON rồi so khớp bằng `@>` – một câu SQL duy nhất cho mọi tổ hợp thuộc tính; bộ lọc bên trái trang danh sách cũng được sinh từ JSONB bằng `attributes->>\'metal\'` và `GROUP BY`.'),
     H3('3.1.3. Kết quả'),
-    RP('EXPLAIN ANALYZE cho thấy planner dùng `Bitmap Index Scan on idx_products_attributes`, truy vấn lọc 2 thuộc tính trên 3.033 sản phẩm mất **0,06 ms** so với **2,1 ms** khi quét tuần tự (nhanh hơn ~30 lần). Trang quản trị cho phép thêm/xoá thuộc tính tuỳ ý mà không cần ALTER TABLE (Hình 4.7).'),
-    ...figure('10b-admin-benchmark-jsonb.jpg', 3, 'EXPLAIN ANALYZE lọc JSONB có GIN index (trái) và quét tuần tự (phải)'),
-
+    RP('EXPLAIN ANALYZE cho thấy planner dùng `Bitmap Index Scan on idx_products_attributes`, truy vấn lọc 2 thuộc tính trên 3.033 sản phẩm mất **0,06 ms** so với **2,1 ms** khi quét tuần tự (nhanh hơn ~30 lần). Trang quản trị cho phép thêm/xoá thuộc tính tuỳ ý mà không cần ALTER TABLE (Hình 4.5).'),
     // ---------------------------------------------------------------- 3.2 FTS
     H2('3.2. Full-text search tiếng Việt với unaccent, tsvector và pg_trgm'),
     H3('3.2.1. Bài toán'),
@@ -74,8 +62,7 @@ ORDER BY rank DESC LIMIT 24;
 -- Gợi ý khi gõ: khớp tiền tố 'nhan:* & kim:*'
 WHERE search_vec @@ to_tsquery('simple', vi_unaccent('nhan:* & kim:*'))`),
     H3('3.2.3. Kết quả'),
-    RP('Tìm “nhan kim cuong 18k” trả về 3 nhẫn kim cương viết tay xếp đầu rồi đến các mẫu sinh tự động (Hình 3.2); gõ sai “nhan kim cuog solitare” tầng full-text không khớp, tầng trigram tìm đúng “Nhẫn kim cương vàng 18K Solitaire 6 chấu” với similarity 0,44 (Hình 3.3). Thanh tìm kiếm gợi ý sau 200 ms mỗi lần gõ nhờ prefix search. Full-text có index nhanh hơn quét tuần tự ~9 lần, trigram ~2,6 lần.'),
-    ...figure('04-tim-kiem-fulltext.jpg', 3, 'Kết quả full-text search với từ khoá không dấu'),
+    RP('Tìm “nhan kim cuong 18k” trả về 3 nhẫn kim cương viết tay xếp đầu rồi đến các mẫu sinh tự động; gõ sai “nhan kim cuog solitare” tầng full-text không khớp, tầng trigram tìm đúng “Nhẫn kim cương vàng 18K Solitaire 6 chấu” với similarity 0,44 (Hình 3.1). Thanh tìm kiếm gợi ý sau 200 ms mỗi lần gõ nhờ prefix search. Full-text có index nhanh hơn quét tuần tự ~9 lần, trigram ~2,6 lần.'),
     ...figure('05-tim-kiem-trigram.jpg', 3, 'Gõ sai chính tả – hệ thống tự chuyển sang tìm gần đúng bằng trigram'),
 
     // ---------------------------------------------------------------- 3.3 pgvector
@@ -98,7 +85,7 @@ ORDER BY p.embedding <=> me.embedding
 LIMIT 8;`),
     RP('Về phía tạo embedding: trong môi trường sản xuất thường gọi mô hình AI (OpenAI text-embedding, CLIP cho ảnh…). Để tiểu luận chạy được không phụ thuộc dịch vụ ngoài, nhóm cài đặt embedding bằng kỹ thuật **feature hashing** (`api/src/embedding.js`): tách tên, mô tả, danh mục và từng cặp khoá=giá trị của JSONB thành token và bigram, băm mỗi token vào một trong 256 chiều với dấu ±, nhân trọng số (danh mục và thuộc tính ×4, tên ×3, mô tả ×1) rồi chuẩn hoá L2. Hai sản phẩm cùng chất liệu, cùng đá, cùng loại sẽ chia sẻ nhiều token nên vector gần nhau. Lược đồ và truy vấn không thay đổi nếu sau này thay bằng mô hình AI thật – chỉ cần đổi hàm `embedProduct()`.'),
     H3('3.3.3. Kết quả'),
-    RP('Với “Nhẫn kim cương vàng trắng 18K Halo”, 8 gợi ý đều là nhẫn vàng trắng 18K đính kim cương (độ tương đồng 61–65 %), trong đó có “Nhẫn kim cương vàng 18K Solitaire” (Hình 3.4). Truy vấn dùng `Index Scan using idx_products_embedding`, 0,23 ms so với 1,7 ms khi tính khoảng cách cho toàn bộ 3.033 vector (nhanh hơn ~7 lần). Khi thêm/sửa sản phẩm trên trang quản trị, API tính lại embedding và ghi trong cùng câu INSERT/UPDATE.'),
+    RP('Với “Nhẫn kim cương vàng trắng 18K Halo”, 8 gợi ý đều là nhẫn vàng trắng 18K đính kim cương (độ tương đồng 61–65 %), trong đó có “Nhẫn kim cương vàng 18K Solitaire” (Hình 3.2). Truy vấn dùng `Index Scan using idx_products_embedding`, 0,23 ms so với 1,7 ms khi tính khoảng cách cho toàn bộ 3.033 vector (nhanh hơn ~7 lần). Khi thêm/sửa sản phẩm trên trang quản trị, API tính lại embedding và ghi trong cùng câu INSERT/UPDATE.'),
     ...figure('03-chi-tiet-pgvector.jpg', 3, 'Trang chi tiết sản phẩm với khối “Có thể bạn cũng thích” từ pgvector', 14),
 
     // ---------------------------------------------------------------- 3.4 partition
@@ -131,7 +118,7 @@ SELECT ensure_orders_partition('2027-01-01');`),
 SELECT count(*), sum(total) FROM orders
 WHERE created_at >= '2026-10-01' AND created_at < '2026-10-15';`),
     H3('3.4.3. Kết quả'),
-    RP('Để kiểm chứng partition ở quy mô thật, nhóm sinh thêm **1.035.853 đơn hàng** (1.543.358 dòng chi tiết, 312 MB) rải đều 34 tháng từ 01/2024 bằng lệnh `npm run seed:big`, tạo thành 37 partition. Với truy vấn doanh thu 2 tuần, planner chỉ quét **1/37 partition** và mất **3,3 ms**; khi tắt pruning phải Append cả 37 partition, **66 ms** (nhanh hơn ~20 lần). Báo cáo một tháng theo trạng thái: 10 ms so với 62 ms. Tổng kích thước BRIN trên 37 partition là **888 kB** so với **23 MB** của B-tree tương đương (nhỏ hơn 26 lần); BRIN tăng theo số khối chứ không theo số dòng nên khoảng cách này càng lớn khi dữ liệu tăng. Một kết quả trung thực khác: với partition theo tháng, mỗi partition chỉ ~30.000 dòng nằm gọn trong bộ nhớ đệm nên ép dùng BRIN để lọc 3 ngày (2,7 ms) không nhanh hơn quét tuần tự partition đó (1,9 ms) — nghĩa là khi đã partition, giá trị của BRIN nằm ở kích thước, còn tốc độ đến từ pruning. Trang quản trị hiển thị số dòng và dung lượng từng partition (Hình 3.8).'),
+    RP('Để kiểm chứng partition ở quy mô thật, nhóm sinh thêm **1.035.853 đơn hàng** (1.543.358 dòng chi tiết, 312 MB) rải đều 34 tháng từ 01/2024 bằng lệnh `npm run seed:big`, tạo thành 37 partition. Với truy vấn doanh thu 2 tuần, planner chỉ quét **1/37 partition** và mất **3,3 ms**; khi tắt pruning phải Append cả 37 partition, **66 ms** (nhanh hơn ~20 lần). Báo cáo một tháng theo trạng thái: 10 ms so với 62 ms. Tổng kích thước BRIN trên 37 partition là **888 kB** so với **23 MB** của B-tree tương đương (nhỏ hơn 26 lần); BRIN tăng theo số khối chứ không theo số dòng nên khoảng cách này càng lớn khi dữ liệu tăng. Một kết quả trung thực khác: với partition theo tháng, mỗi partition chỉ ~30.000 dòng nằm gọn trong bộ nhớ đệm nên ép dùng BRIN để lọc 3 ngày (2,7 ms) không nhanh hơn quét tuần tự partition đó (1,9 ms) — nghĩa là khi đã partition, giá trị của BRIN nằm ở kích thước, còn tốc độ đến từ pruning. Trang quản trị hiển thị số dòng và dung lượng từng partition (thẻ Bảng · Index · Partition).'),
     ...figure('10-admin-benchmark-explain.jpg', 3, 'Partition pruning: chỉ quét 1 partition (trái) so với Append toàn bộ partition (phải)'),
 
     // ---------------------------------------------------------------- 3.5 transaction
@@ -174,11 +161,7 @@ BEGIN
 
   RETURN QUERY SELECT v_order_id, v_subtotal + v_shipping;
 END $$;`),
-    RP('Tầng API chỉ còn một câu SQL; thông điệp lỗi do PL/pgSQL RAISE được chuyển thẳng về giao diện với mã HTTP 409:'),
-    ...code(`// api/src/routes/orders.js
-const row = await one('SELECT * FROM place_order($1::jsonb, $2::jsonb, $3)',
-  [JSON.stringify(customer), JSON.stringify(cleanItems), note ?? null]);
-// ... catch (err) { if (/^(OUT_OF_STOCK|EMPTY_ORDER)/.test(err.message)) reply.code(409).send({ error: ... }) }`),
+    RP('Tầng API chỉ còn một câu `SELECT * FROM place_order($1, $2, $3)`; thông điệp lỗi do PL/pgSQL RAISE được chuyển thẳng về giao diện với mã HTTP 409 để khách thấy “chỉ còn 1 sản phẩm”.'),
     H3('3.5.3. Kết quả'),
     RP('Kịch bản kiểm chứng (`db/benchmark/oversell_test.sql`): đặt stock = 5 cho một sản phẩm, dùng pgbench cho **50 client đồng thời** mỗi client mua 1 chiếc. Kết quả: đúng **5 đơn thành công**, 45 giao dịch nhận lỗi OUT_OF_STOCK, stock cuối cùng = 0, không có giao dịch nào làm kho âm. Thông lượng với 30 client đặt hàng liên tục trên CSDL 1 triệu đơn đạt ~1.090 đơn/giây, độ trễ trung bình 28 ms. Huỷ đơn (`cancel_order()`) cũng là một giao dịch: trả kho, ghi nhật ký, đổi trạng thái – nếu bất kỳ bước nào lỗi thì không bước nào có hiệu lực.'),
 
@@ -221,7 +204,7 @@ client.on('notification', (msg) => {
   for (const res of subscribers) res.write(\`event: \${msg.channel}\\ndata: \${msg.payload}\\n\\n\`);
 });`),
     H3('3.6.3. Kết quả'),
-    RP('Trên CSDL 1 triệu đơn, đọc doanh thu 30 ngày từ materialized view mất **0,018 ms** so với **19,4 ms** khi tính trực tiếp trên bảng orders (nhanh hơn ~1.000 lần); top 10 sản phẩm bán chạy đọc từ `mv_top_products` mất 0,02 ms trong khi JOIN và GROUP BY 1,5 triệu dòng chi tiết mất **1,14 giây** – đây là loại truy vấn không thể chạy mỗi lần mở dashboard. REFRESH CONCURRENTLY cả 3 view mất vài giây và có thể đặt lịch. Khi tồn kho một sản phẩm giảm xuống 1, trình duyệt quản trị nhận thông báo trong dưới 100 ms mà không cần tải lại (Hình 3.7); khi khách đặt đơn mới, số liệu “hôm nay” trên dashboard tự cập nhật.'),
+    RP('Trên CSDL 1 triệu đơn, đọc doanh thu 30 ngày từ materialized view mất **0,018 ms** so với **19,4 ms** khi tính trực tiếp trên bảng orders (nhanh hơn ~1.000 lần); top 10 sản phẩm bán chạy đọc từ `mv_top_products` mất 0,02 ms trong khi JOIN và GROUP BY 1,5 triệu dòng chi tiết mất **1,14 giây** – đây là loại truy vấn không thể chạy mỗi lần mở dashboard. REFRESH CONCURRENTLY cả 3 view mất vài giây và có thể đặt lịch. Khi tồn kho một sản phẩm giảm xuống 1, trình duyệt quản trị nhận thông báo trong dưới 100 ms mà không cần tải lại (Hình 3.5); khi khách đặt đơn mới, số liệu “hôm nay” trên dashboard tự cập nhật.'),
     ...figure('13-admin-notify-sse.jpg', 3, 'Thông báo “Sắp hết hàng” đẩy từ PostgreSQL (pg_notify) sang trình duyệt quản trị', 9),
 
     // ---------------------------------------------------------------- 3.7 các index khác
@@ -237,7 +220,6 @@ client.on('notification', (msg) => {
         ['B-tree kết hợp + partial', '`idx_products_category_price ON products (category_id, price) WHERE status = \'active\'`', 'Trang danh mục sắp xếp theo giá.'],
         ['Generated column', '`orders.total`, `order_items.line_total`, `products.search_vec`', 'Dữ liệu dẫn xuất do CSDL tính, luôn nhất quán, có thể index.'],
       ], 3, 'Các index và cột sinh tự động khác trong hệ thống'),
-    ...figure('11-admin-monitor-index.jpg', 3, 'Trang quản trị liệt kê bảng, index (loại, kích thước, lượt dùng) và partition', 15.5),
     pageBreak(),
   ];
 }

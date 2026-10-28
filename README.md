@@ -21,22 +21,39 @@ Ngoài ra: partial index, covering index (INCLUDE), expression index, generated 
 db/migrations/      001..006 — SQL thuần, chạy theo thứ tự (migration runner tự viết)
 db/seed/seed.sql    dữ liệu mẫu: 40 sản phẩm thật + 3.000 sinh tự động, 500 khách, 30.000 đơn
 api/src/seed-big.js 1 triệu đơn hàng để test partition/index · api/src/bench.js công cụ đo
-db/benchmark/       EXPLAIN ANALYZE trước/sau index, pgbench, kiểm chứng chống bán quá kho
+db/demo/            demo_queries.sql — câu lệnh demo mở trong DBeaver
+db/benchmark/       pgbench: đặt hàng đồng thời, kiểm chứng chống bán quá kho
 api/                Node.js + Fastify + pg  (port 4000)
 web/                Next.js — trang bán hàng (/) và quản trị (/admin)  (port 3000)
 docs/               tiểu luận, slide, screenshots
 ```
 
-## Chạy bằng Docker (nhanh nhất)
+## Chạy trên máy cá nhân (chỉ cần Docker Desktop)
 
 ```bash
-docker compose up -d --build
-# Web:      http://localhost:3000        Admin: http://localhost:3000/admin  (admin / admin123)
-# API:      http://localhost:4000/api/health
-# Monitor:  http://localhost:3000/admin/monitor   (EXPLAIN có/không index, bảng-index-partition, pg_stat_statements)
-# Postgres: localhost:5432  postgres / postgres  db: jewelry
+git clone https://github.com/phunganhtuan123/master-csdl.git
+cd master-csdl
+docker compose up -d --build        # lần đầu 2-3 phút: build image → migrate → seed → embed
+docker compose logs -f api          # thấy dòng "LISTEN low_stock, new_order" là xong (Ctrl+C để thoát log)
 ```
-Lần đầu container `api` tự chạy `migrate → seed → embed` (~20 giây) rồi mới mở cổng. Chỉ 3 container: db, api, web.
+| Địa chỉ | Dùng để |
+|---|---|
+| http://localhost:3000 | Trang bán hàng |
+| http://localhost:3000/admin  (admin / admin123) | Quản trị · Monitor & Benchmark |
+| localhost:5432 · db `jewelry` · user `postgres` · pass `postgres` | Kết nối DBeaver / psql |
+
+```bash
+docker compose exec api npm run seed:big   # (tuỳ chọn) thêm 1 triệu đơn hàng, ~2 phút
+docker compose exec api npm run bench      # công cụ đo, in bảng + ghi docs/benchmark/bench-report.md
+docker compose down                        # tắt (giữ dữ liệu)   |   docker compose down -v  xoá sạch
+```
+
+## Query bằng DBeaver (để demo cho giảng viên)
+
+1. DBeaver → **Database → New Database Connection → PostgreSQL** → Host `localhost`, Port `5432`, Database `jewelry`, Username `postgres`, Password `postgres` → **Test Connection** → Finish.
+2. **File → Open File** → chọn `db/demo/demo_queries.sql`, gắn với connection vừa tạo.
+3. Đặt con trỏ vào từng khối lệnh, bấm **Ctrl+Enter** (Mac: **Cmd+Enter**). File có 8 mục đánh số trùng với chương 3 tiểu luận: tổng quan → JSONB → full-text → pgvector → partition → transaction chống bán quá kho (có hướng dẫn mở 2 tab để thấy giao dịch bị chờ) → materialized view/NOTIFY → index khác → giám sát.
+4. Muốn xem kế hoạch thực thi dạng hình: chọn câu SQL → **Ctrl+Shift+E** (Explain Execution Plan).
 
 ## Chạy thủ công (dev)
 
