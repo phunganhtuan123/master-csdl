@@ -326,25 +326,43 @@ T(s, [
 
 // ====================================================================== 16. Benchmark
 s = content('Benchmark: có index nhanh hơn bao nhiêu?', 'Ứng dụng & kết quả');
-s.addChart(pres.ChartType.bar, [{
-  name: 'Nhanh hơn (lần)',
-  labels: ['Trigram', 'pgvector HNSW', 'Full-text (GIN)', 'Partition pruning', 'JSONB @> (GIN)', 'Covering index', 'Partial index', 'Materialized view'],
-  values: [2.6, 7.4, 9.6, 20, 34, 251, 484, 1077],
-}], {
-  x: X0, y: Y0, w: 5.6, h: 5.4, barDir: 'bar',
-  chartColors: [BLUE], showLegend: false,
-  showValue: true, dataLabelPosition: 'outEnd', dataLabelFontSize: 12, dataLabelColor: INK, dataLabelFontFace: '+mn-lt', dataLabelFormatCode: '0.#"×"',
-  catAxisLabelFontSize: 12, catAxisLabelColor: INK, catAxisLabelFontFace: '+mn-lt', catGridLine: { style: 'none' },
-  valAxisHidden: true, valAxisLogScaleBase: 10, valGridLine: { color: 'E0E0E0', size: 1 }, valAxisLabelFontFace: '+mn-lt', valAxisLabelColor: MUTED, valAxisLabelFontSize: 10,
-  showTitle: false, objectName: 'speedup-chart',
+// Biểu đồ vẽ bằng shape (hiển thị giống nhau trên PowerPoint / Keynote / PDF), thang log
+label(s, 'SỐ LẦN NHANH HƠN SO VỚI KHÔNG INDEX (1 TRIỆU ĐƠN, TRUNG VỊ 5 LẦN)', X0, Y0, W0);
+const rows = [
+  ['Materialized view', 1077, '0,018 ms vs 19 ms', TEAL],
+  ['Partial index', 484, '0,2 ms vs 98 ms', BLUE],
+  ['Covering index', 251, '0,2 ms vs 52 ms', BLUE],
+  ['JSONB @> (GIN)', 34, '0,06 ms vs 2,1 ms', BLUE],
+  ['Partition pruning', 20, '3,3 ms vs 66 ms', BLUE],
+  ['Full-text (GIN)', 9.6, '0,22 ms vs 2,1 ms', BLUE],
+  ['pgvector HNSW', 7.4, '0,23 ms vs 1,7 ms', BLUE],
+  ['Trigram', 2.6, '0,8 ms vs 2,1 ms', BLUE],
+];
+const BX = X0 + 1.9, BW = 3.3, ROW = 0.52, maxLog = Math.log10(1077);
+rows.forEach(([name, v, note, c], i) => {
+  const y = Y0 + 0.4 + i * ROW;
+  T(s, name, { x: X0, y, w: 1.85, h: ROW, fontSize: 13, align: 'right', valign: 'middle' });
+  const bw = Math.max(0.35, (Math.log10(v) / maxLog) * BW);
+  s.addShape(pres.ShapeType.rect, { x: BX, y: y + 0.08, w: bw, h: ROW - 0.16, fill: { color: c }, line: { color: c }, objectName: 'bar' });
+  T(s, String(v).replace('.', ',') + '×', { x: BX + bw + 0.08, y, w: 1.0, h: ROW, fontSize: 14, bold: true, color: c, valign: 'middle' });
+  T(s, note, { x: X0 + 6.3, y, w: 1.4, h: ROW, fontSize: 10.5, color: MUTED, valign: 'middle' });
 });
-stat(s, '1 triệu', 'đơn hàng · 37 partition\nnpm run seed:big', X0 + 5.8, Y0, 3.1, 1.6, GREEN, 32);
-stat(s, '1.090', 'đơn hàng / giây\n30 client đồng thời', X0 + 5.8, Y0 + 1.8, 3.1, 1.6, TEAL, 32);
-s.addShape(pres.ShapeType.roundRect, { x: X0 + 5.8, y: Y0 + 3.6, w: 3.1, h: 1.8, fill: { color: 'FFFFFF' }, line: { color: BLUE, width: 1 }, rectRadius: 0.08, objectName: 'tool' });
+// thước log
+[1, 10, 100, 1000].forEach((v) => {
+  const x = BX + (Math.log10(v) / maxLog) * BW;
+  s.addShape(pres.ShapeType.line, { x, y: Y0 + 0.4, w: 0, h: ROW * 8, line: { color: 'DDDDDD', width: 0.75, dashType: 'dash' }, objectName: 'grid' });
+  T(s, v + '×', { x: x - 0.3, y: Y0 + 0.4 + ROW * 8, w: 0.6, h: 0.25, fontSize: 9, color: MUTED, align: 'center' });
+});
+// cột phải
+const RX2 = X0 + 7.75, RW2 = 1.15;
+stat(s, '1 tr', 'đơn hàng\n37 partition', RX2, Y0 + 0.4, RW2, 1.3, GREEN, 26);
+stat(s, '1.090', 'đơn / giây\n30 client', RX2, Y0 + 1.8, RW2, 1.3, TEAL, 24);
+stat(s, '5 / 50', 'không bán\nquá kho', RX2, Y0 + 3.2, RW2, 1.3, RED, 24);
+s.addShape(pres.ShapeType.rect, { x: X0, y: Y0 + 4.95, w: W0, h: 0.5, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'tool-bg' });
 T(s, [
-  { text: 'Công cụ đo: npm run bench', options: { bold: true, color: BLUE, breakLine: true } },
-  { text: '12 kịch bản × 5 lần, lấy trung vị; so sánh bằng SET LOCAL enable_… = off; xuất bench-report.md / .json' },
-], { x: X0 + 5.95, y: Y0 + 3.7, w: 2.8, h: 1.6, fontSize: 12, color: INK, fontFace: 'Arial', margin: 0, isTextBox: true });
+  { text: 'Công cụ đo  npm run bench', options: { bold: true, color: BLUE } },
+  { text: '  —  12 kịch bản có/không index × 5 lần lấy trung vị, tắt index bằng SET LOCAL enable_… = off, kết quả ghi vào bench-report.md' },
+], { x: X0 + 0.15, y: Y0 + 4.95, w: W0 - 0.3, h: 0.5, fontSize: 11.5, color: INK, fontFace: 'Arial', margin: 0, isTextBox: true, valign: 'middle' });
 
 // ====================================================================== 17. Kết luận
 pres.addSection({ title: 'Kết luận' });
