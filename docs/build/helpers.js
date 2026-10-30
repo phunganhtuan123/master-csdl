@@ -1,4 +1,5 @@
-// Helper tạo tiểu luận theo chuẩn: Times New Roman 13, giãn dòng 1.5, lề trên 3 / dưới 3 / trái 3.5 / phải 2 cm
+// Helper tạo tiểu luận theo template lớp (TS. Lê Thị Ngọc Thảo): Times New Roman 13, giãn 1.3,
+// lề trên/dưới 2,2 cm, trái 3 cm, phải 2 cm; heading xanh 0072BC / 17365D; caption nghiêng xám; bảng header DCEEF8
 const fs = require('fs');
 const path = require('path');
 const {
@@ -8,7 +9,8 @@ const {
 
 const FONT = 'Times New Roman';
 const SZ = 26;          // 13pt (half-points)
-const LINE = 360;       // 1.5 lines
+const LINE = 312;       // 1.3 lines (giống template)
+const BLUE = '0072BC', NAVY = '17365D', CAP = '68737D', TH = 'DCEEF8', TR = 'FAFCFD';
 const IMG = path.resolve(__dirname, '../img');
 
 // Sổ đăng ký để dựng mục lục tĩnh: mọi heading/caption được ghi lại theo thứ tự xuất hiện
@@ -20,7 +22,7 @@ function setPages(map) { PAGES = map; }
 function resetRegistry() { registry.headings.length = 0; registry.figures.length = 0; registry.tables.length = 0; for (const k in counters) delete counters[k]; }
 
 const cm = (v) => Math.round(v * 567);      // cm -> twips (DXA)
-const CONTENT_W = cm(21 - 3.5 - 2);          // ≈ 15.5 cm
+const CONTENT_W = cm(21 - 3 - 2);            // 16 cm
 
 const run = (text, o = {}) => new TextRun({ text, font: FONT, size: o.size || SZ, bold: o.bold, italics: o.italics, color: o.color });
 const codeRun = (text, o = {}) => new TextRun({ text, font: 'Courier New', size: o.size || 18, bold: o.bold, color: o.color });
@@ -31,7 +33,7 @@ function P(content, o = {}) {
   return new Paragraph({
     children,
     alignment: o.align || AlignmentType.JUSTIFIED,
-    spacing: { line: LINE, lineRule: 'auto', after: o.after ?? 120, before: o.before ?? 0 },
+    spacing: { line: LINE, lineRule: 'auto', after: o.after ?? 80, before: o.before ?? 0 },
     indent: o.noIndent ? undefined : { firstLine: o.firstLine ?? cm(1) },
     keepNext: o.keepNext,
   });
@@ -55,20 +57,24 @@ function rich(text, o = {}) {
 }
 const RP = (text, o = {}) => P(rich(text, o), o);
 
-function H1(text) {   // Chương: in hoa, đậm, 14pt, canh giữa
-  registry.headings.push({ level: 1, text: text.toUpperCase() });
-  return new Paragraph({ heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER,
-    spacing: { before: 240, after: 240, line: LINE, lineRule: 'auto' }, children: [run(text.toUpperCase(), { bold: true, size: 28 })] });
+/** Đăng ký 1 mục cấp 1 vào mục lục mà không tạo đoạn (dùng cho Tóm tắt, Lời mở đầu...) */
+function regH1(text) { registry.headings.push({ level: 1, text }); return []; }
+
+function H1(text) {   // Chương: in hoa, đậm, 16pt, xanh 0072BC, canh giữa, sang trang mới
+  const t = text.toUpperCase().replace(/^CHƯƠNG (\d+): /, 'CHƯƠNG $1. ');
+  registry.headings.push({ level: 1, text: t });
+  return new Paragraph({ heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, pageBreakBefore: true,
+    spacing: { before: 0, after: 240, line: 240, lineRule: 'auto' }, children: [run(t, { bold: true, size: 32, color: BLUE })] });
 }
 function H2(text) {
   registry.headings.push({ level: 2, text });
-  return new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 120, line: LINE, lineRule: 'auto' }, keepNext: true,
-    children: [run(text, { bold: true, size: 26 })] });
+  return new Paragraph({ heading: HeadingLevel.HEADING_2, spacing: { before: 240, after: 160, line: LINE, lineRule: 'auto' }, keepNext: true,
+    children: [run(text, { bold: true, size: 28, color: NAVY })] });
 }
 function H3(text) {
   registry.headings.push({ level: 3, text });
-  return new Paragraph({ heading: HeadingLevel.HEADING_3, spacing: { before: 160, after: 80, line: LINE, lineRule: 'auto' }, keepNext: true,
-    children: [run(text, { bold: true, italics: true, size: 26 })] });
+  return new Paragraph({ heading: HeadingLevel.HEADING_3, spacing: { before: 180, after: 120, line: LINE, lineRule: 'auto' }, keepNext: true,
+    children: [run(text, { bold: true, size: 26, color: BLUE })] });
 }
 
 /** Danh sách gạch đầu dòng */
@@ -106,18 +112,17 @@ function code(text) {
   }));
 }
 
-/** Caption đánh số tĩnh theo chương: Hình 3.1, Bảng 2.4 ... (không dùng field, mở ở đâu cũng đúng) */
+/** Caption đánh số liên tục toàn bài: "Bảng 3. ...", "Hình 2. ..." (giống template), nghiêng, xám, canh giữa */
 function caption(kind, chapter, text) {
-  counters[kind] = counters[kind] || {};
-  counters[kind][chapter] = (counters[kind][chapter] || 0) + 1;
-  const label = `${kind} ${chapter}.${counters[kind][chapter]}`;
+  counters[kind] = (counters[kind] || 0) + 1;
+  const label = `${kind} ${counters[kind]}`;
   (kind === 'Hình' ? registry.figures : registry.tables).push({ label, text });
   return new Paragraph({
     style: 'Caption',
     alignment: AlignmentType.CENTER,
-    spacing: { before: 60, after: 200, line: LINE, lineRule: 'auto' },
+    spacing: { before: 80, after: 160, line: 240, lineRule: 'auto' },
     keepNext: kind === 'Bảng',
-    children: [run(`${label}: ${text}`, { bold: true, size: 26 })],
+    children: [run(`${label}. ${text}`, { bold: true, italics: true, size: 22, color: CAP })],
   });
 }
 
@@ -129,12 +134,12 @@ function tocLine(text, level = 1, key = text, o = {}) {
     tabStops: [{ type: TabStopType.RIGHT, leader: 'dot', position: CONTENT_W }],
     spacing: { line: 300, lineRule: 'auto', after: level === 1 ? 60 : 20, before: level === 1 ? 100 : 0 },
     indent: { left: indent, right: cm(1.2), hanging: 0 },
-    children: [run(text, { bold: level === 1, size: o.size || 26 }), run(`\t${page}`, { size: o.size || 26 })],
+    children: [run(text, { bold: level === 1, size: o.size || 24, color: level === 1 ? NAVY : undefined }), run(`\t${page}`, { size: o.size || 24 })],
   });
 }
-function tocHeadings() { return registry.headings.map((h) => tocLine(h.text, h.level, h.text)); }
-function tocFigures()  { return registry.figures.map((f) => tocLine(`${f.label}: ${f.text}`, 2, `${f.label}: ${f.text}`)); }
-function tocTables()   { return registry.tables.map((f) => tocLine(`${f.label}: ${f.text}`, 2, `${f.label}: ${f.text}`)); }
+function tocHeadings(maxLevel = 3) { return registry.headings.filter((h) => h.level <= maxLevel).map((h) => tocLine(h.text, h.level, h.text)); }
+function tocFigures()  { return registry.figures.map((f) => tocLine(`${f.label}. ${f.text}`, 2, `${f.label}. ${f.text}`)); }
+function tocTables()   { return registry.tables.map((f) => tocLine(`${f.label}. ${f.text}`, 2, `${f.label}. ${f.text}`)); }
 
 /** Hình ảnh + chú thích. widthCm mặc định 15.5 */
 function figure(file, chapter, text, widthCm = 15.5) {
@@ -157,20 +162,22 @@ function table(cols, rows, chapter, text, o = {}) {
   const widths = cols.map((c) => Math.round(CONTENT_W * c.w / total));
   const cell = (content, { header = false, width, align } = {}) => new TableCell({
     width: { size: width, type: WidthType.DXA },
-    shading: header ? { type: ShadingType.CLEAR, fill: 'F6EFDD', color: 'auto' } : undefined,
+    shading: { type: ShadingType.CLEAR, fill: header ? TH : TR, color: 'auto' },
     margins: { top: 40, bottom: 40, left: 80, right: 80 },
     verticalAlign: 'center',
     children: (Array.isArray(content) ? content : [content]).map((c) => new Paragraph({
       alignment: align || (header ? AlignmentType.CENTER : AlignmentType.LEFT),
-      spacing: { line: 276, lineRule: 'auto', after: 0 },
+      spacing: { line: 252, lineRule: 'auto', after: 0 },
       children: typeof c === 'string'
-        ? (c.startsWith('`') && c.endsWith('`') ? [codeRun(c.slice(1, -1), { size: 22 })] : rich(c, { size: o.fontSize || 26, bold: header }))
+        ? (c.startsWith('`') && c.endsWith('`') ? [codeRun(c.slice(1, -1), { size: 18 })] : rich(c, { size: o.fontSize || 21, bold: header }))
         : c,
     })),
   });
+  const thin = { style: BorderStyle.SINGLE, size: 4, color: '000000' };
   const t = new Table({
     width: { size: CONTENT_W, type: WidthType.DXA },
     columnWidths: widths,
+    borders: { top: thin, bottom: thin, left: thin, right: thin, insideHorizontal: thin, insideVertical: thin },
     rows: [
       new TableRow({ tableHeader: true, children: cols.map((c, i) => cell(c.h, { header: true, width: widths[i] })) }),
       ...rows.map((r) => new TableRow({ children: r.map((c, i) => cell(c, { width: widths[i], align: cols[i].align })) })),
@@ -182,7 +189,7 @@ function table(cols, rows, chapter, text, o = {}) {
 const pageBreak = () => new Paragraph({ children: [new PageBreak()] });
 
 /** Dòng canh giữa (trang bìa) */
-const center = (text, o = {}) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { line: o.line || LINE, after: o.after ?? 0, before: o.before ?? 0 },
+const center = (text, o = {}) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { line: o.line || LINE, lineRule: 'auto', after: o.after ?? 0, before: o.before ?? 0 },
   children: [run(text, o)] });
 
 const numberingConfig = {
@@ -196,4 +203,4 @@ const numberingConfig = {
   ],
 };
 
-module.exports = { registry, setPages, resetRegistry, tocHeadings, tocFigures, tocTables, norm, P, RP, H1, H2, H3, bullets, numbered, code, figure, table, caption, pageBreak, center, run, codeRun, rich, cm, FONT, SZ, LINE, CONTENT_W, numberingConfig };
+module.exports = { regH1, BLUE, NAVY, CAP, TH, TR, registry, setPages, resetRegistry, tocHeadings, tocFigures, tocTables, norm, P, RP, H1, H2, H3, bullets, numbered, code, figure, table, caption, pageBreak, center, run, codeRun, rich, cm, FONT, SZ, LINE, CONTENT_W, numberingConfig };

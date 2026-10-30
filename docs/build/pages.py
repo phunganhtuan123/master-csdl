@@ -4,17 +4,19 @@ pdf, reg, out = sys.argv[1], sys.argv[2], sys.argv[3]
 n = int(re.search(r'Pages:\s+(\d+)', subprocess.run(['pdfinfo', pdf], capture_output=True, text=True).stdout).group(1))
 def norm(t): return re.sub(r'\s+', ' ', unicodedata.normalize('NFC', t)).strip().lower()
 pages = [norm(subprocess.run(['pdftotext', '-layout', '-f', str(i), '-l', str(i), pdf, '-'], capture_output=True, text=True).stdout) for i in range(1, n+1)]
-body_start = next(i for i, p in enumerate(pages) if 'danh mục từ viết tắt' in p) + 1   # index 0-based của trang body đầu tiên
+body_start = 1   # trang 'Nhận xét' là trang 1 (bìa index 0 không đánh số)
+# bỏ qua các trang mục lục/danh mục (chúng chứa tên mọi heading): bắt đầu tìm từ trang 'danh mục thuật ngữ' thật (có bảng)
+skip_until = next(i for i, p in enumerate(pages) if 'cách dùng trong đề tài' in p)
 R = json.load(open(reg))
-keys = [h['text'] for h in R['headings']] + [f"{f['label']}: {f['text']}" for f in R['figures']] + [f"{f['label']}: {f['text']}" for f in R['tables']]
-res, ptr, miss = {}, body_start, []
+keys = [h["text"] for h in R["headings"]] + [f"{f['label']}. {f['text']}" for f in R["figures"]] + [f"{f['label']}. {f['text']}" for f in R["tables"]]
+res, ptr, miss = {}, skip_until, []
 for k in keys:
     nk = norm(k); probe = nk[:40]
     found = None
     for i in range(ptr, n):
         if probe in pages[i]: found = i; break
     if found is None:
-        for i in range(body_start, n):          # thử lại từ đầu với probe ngắn hơn
+        for i in range(skip_until, n):          # thử lại từ đầu với probe ngắn hơn
             if nk[:25] in pages[i]: found = i; break
     if found is None: miss.append(k); continue
     res[nk] = str(found - body_start + 1); ptr = found

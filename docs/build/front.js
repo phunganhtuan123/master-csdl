@@ -2,6 +2,7 @@
 const { Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = require('docx');
 const H = require('./helpers');
 const { P, RP, H1, H2, bullets, numbered, pageBreak, center, run, cm, LINE, CONTENT_W } = H;
+const { Table: _T } = require('docx');
 
 const INFO = {
   truong: 'TRƯỜNG ĐẠI HỌC CÔNG NGHỆ TP. HỒ CHÍ MINH',
@@ -10,100 +11,119 @@ const INFO = {
   detai: 'XÂY DỰNG HỆ THỐNG BÁN HÀNG TRANG SỨC\nVỚI POSTGRESQL',
   nhom: 'Nhóm 6',
   tv: [['Phùng Anh Tuấn', '2541864024'], ['Võ Bùi Duy Thông', '2541864019']],
-  gv: '……………………………',
-  lop: '……………………………',
-  noi: 'TP. Hồ Chí Minh, tháng 10 năm 2026',
+  gv: 'TS. Lê Thị Ngọc Thảo',
+  lop: '25SCT41',
+  noi: 'Thành phố Hồ Chí Minh, tháng 10 năm 2026',
 };
 
 function coverPage() {
+  const fs = require('fs');
+  const { ImageRun } = require('docx');
+  const logo = fs.readFileSync(require('path').resolve(__dirname, '../img/tpl/hutech-logo-wide.png'));
   const out = [];
-  out.push(center('BỘ GIÁO DỤC VÀ ĐÀO TẠO', { bold: true, size: 26 }));
-  out.push(center(INFO.truong, { bold: true, size: 28 }));
-  out.push(center(INFO.vien, { bold: true, size: 26, after: 120 }));
-  out.push(center('——————  •  ——————', { size: 24, after: 1600 }));
-  out.push(center('TIỂU LUẬN MÔN HỌC', { bold: true, size: 32, after: 120 }));
-  out.push(center(INFO.mon, { bold: true, size: 36, after: 600 }));
-  out.push(center('Đề tài:', { italics: true, size: 28, after: 120 }));
-  for (const line of INFO.detai.split('\n')) out.push(center(line, { bold: true, size: 36 }));
-  out.push(center('', { after: 1400 }));
+  out.push(center('BỘ GIÁO DỤC VÀ ĐÀO TẠO', { bold: true, size: 26, line: 276 }));
+  out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { line: 276, lineRule: 'auto', after: 60 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '000000', space: 4 } },
+    indent: { left: cm(1.5), right: cm(1.5) },
+    children: [run(INFO.truong, { bold: true, size: 26 })] }));
+  out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 240, after: 240 },
+    children: [new ImageRun({ type: 'png', data: logo, transformation: { width: 300, height: 96 } })] }));
+  out.push(center('MÔN HỌC: ' + INFO.mon, { bold: true, size: 26, after: 60 }));
+  out.push(center('TIỂU LUẬN CUỐI KỲ', { bold: true, size: 28, color: H.BLUE, after: 360 }));
+  out.push(center('ĐỀ TÀI', { size: 24, after: 60 }));
+  for (const line of INFO.detai.split('\n')) out.push(center(line, { bold: true, size: 32, color: H.NAVY, line: 300 }));
+  out.push(center('', { after: 600 }));
   const rows = [
-    ['Giảng viên hướng dẫn:', INFO.gv],
-    ['Lớp:', INFO.lop],
-    ['Nhóm thực hiện:', INFO.nhom],
-    ...INFO.tv.map(([n, m], i) => [i === 0 ? 'Thành viên:' : '', `${n} – MSSV: ${m}`]),
+    ['Giảng viên hướng dẫn', INFO.gv],
+    ...INFO.tv.map(([n, m], i) => [i === 0 ? 'Học viên thực hiện' : '', `${n} - ${m}`]),
+    ['Nhóm', INFO.nhom],
+    ['Mã lớp', INFO.lop],
   ];
+  const none = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
   const t = new Table({
-    width: { size: cm(15), type: WidthType.DXA }, columnWidths: [cm(5.5), cm(9.5)], alignment: AlignmentType.CENTER,
-    borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
-      insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+    width: { size: cm(14), type: WidthType.DXA }, columnWidths: [cm(5.5), cm(8.5)], alignment: AlignmentType.CENTER,
+    borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none },
     rows: rows.map(([a, b]) => new TableRow({ children: [
-      new TableCell({ width: { size: cm(5.5), type: WidthType.DXA }, children: [new Paragraph({ spacing: { line: LINE }, children: [run(a, { bold: true, size: 26 })] })] }),
-      new TableCell({ width: { size: cm(9.5), type: WidthType.DXA }, children: [new Paragraph({ spacing: { line: LINE }, children: [run(b, { size: 26 })] })] }),
+      new TableCell({ width: { size: cm(5.5), type: WidthType.DXA }, borders: { top: none, bottom: none, left: none, right: none }, children: [new Paragraph({ spacing: { line: 320, lineRule: 'auto' }, children: [run(a, { bold: true, size: 24 })] })] }),
+      new TableCell({ width: { size: cm(8.5), type: WidthType.DXA }, borders: { top: none, bottom: none, left: none, right: none }, children: [new Paragraph({ spacing: { line: 320, lineRule: 'auto' }, children: [run(b, { size: 24 })] })] }),
     ] })),
   });
   out.push(t);
-  out.push(center('', { after: 1400 }));
-  out.push(center(INFO.noi, { bold: true, size: 26 }));
-  out.push(pageBreak());
+  out.push(center('', { after: 900 }));
+  out.push(center(INFO.noi, { size: 24 }));
   return out;
 }
 
 function reviewPage() {
   return [
-    center('NHẬN XÉT CỦA GIẢNG VIÊN', { bold: true, size: 28, after: 240 }),
-    ...Array.from({ length: 14 }, () => new Paragraph({ spacing: { line: 480, lineRule: 'auto' }, children: [run('.'.repeat(110), { size: 26 })] })),
-    center('', { after: 240 }),
-    new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { line: LINE }, children: [run('TP. Hồ Chí Minh, ngày …… tháng …… năm 2026', { italics: true })] }),
-    new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { line: LINE }, children: [run('Giảng viên', { bold: true })] }),
-    pageBreak(),
-    center('PHÂN CÔNG CÔNG VIỆC NHÓM 6', { bold: true, size: 28, after: 240 }),
-    ...H.table(
-      [{ w: 1, h: 'STT' }, { w: 4, h: 'Thành viên' }, { w: 9, h: 'Nội dung thực hiện' }, { w: 2.5, h: 'Mức độ' }],
-      [
-        ['1', 'Phùng Anh Tuấn\n2541864024'.replace('\n', ' – '), 'Thiết kế CSDL, migration, index, hàm PL/pgSQL; backend Node.js; benchmark; viết chương 2, 3, 5', '100%'],
-        ['2', 'Võ Bùi Duy Thông – 2541864019', 'Phân tích nghiệp vụ; giao diện Next.js (khách hàng + quản trị); Docker; viết chương 1, 4, kết luận; slide', '100%'],
-      ], null),
-    pageBreak(),
+    center('NHẬN XÉT CỦA GIẢNG VIÊN', { bold: true, size: 28, color: H.BLUE, after: 360 }),
+    ...Array.from({ length: 18 }, () => new Paragraph({ spacing: { line: 480, lineRule: 'auto' }, alignment: AlignmentType.LEFT,
+      children: [run('.'.repeat(132), { size: 22, color: '777777' })] })),
   ];
 }
 
+const TERMS = [
+  ['CSDL', 'Cơ sở dữ liệu', 'Tập hợp dữ liệu được tổ chức để lưu trữ, truy vấn và cập nhật.'],
+  ['HQTCSDL / DBMS', 'Database Management System', 'Hệ quản trị cơ sở dữ liệu; đề tài sử dụng PostgreSQL 16.'],
+  ['ERD', 'Entity Relationship Diagram', 'Sơ đồ biểu diễn thực thể, khoá và quan hệ giữa các bảng.'],
+  ['PK / FK / UQ', 'Primary / Foreign Key, Unique', 'Khoá chính, khoá ngoại, ràng buộc duy nhất.'],
+  ['JSONB', 'JSON Binary', 'Kiểu dữ liệu JSON nhị phân của PostgreSQL, đánh được index GIN; dùng cho thuộc tính sản phẩm.'],
+  ['GIN', 'Generalized Inverted Index', 'Chỉ mục đảo ngược cho JSONB, tsvector, trigram.'],
+  ['BRIN', 'Block Range Index', 'Chỉ mục theo khoảng khối, rất nhỏ, cho cột thời gian của bảng lớn.'],
+  ['HNSW', 'Hierarchical Navigable Small World', 'Thuật toán index tìm láng giềng gần nhất của pgvector.'],
+  ['FTS', 'Full-Text Search', 'Tìm kiếm toàn văn bằng tsvector/tsquery.'],
+  ['Partition', 'Table partitioning', 'Chia bảng đơn hàng thành các bảng con theo tháng.'],
+  ['Materialized view', 'Khung nhìn vật lý', 'Kết quả truy vấn lưu sẵn thành bảng, làm mới bằng REFRESH.'],
+  ['MVCC / ACID', 'Multi-Version Concurrency Control', 'Cơ chế điều khiển đồng thời và bốn tính chất của giao dịch.'],
+  ['LISTEN / NOTIFY', 'Pub/sub tích hợp', 'Cơ chế thông báo sự kiện của PostgreSQL; đẩy cảnh báo tới trang quản trị.'],
+  ['SSE', 'Server-Sent Events', 'Máy chủ đẩy sự kiện xuống trình duyệt qua HTTP.'],
+  ['API / REST', 'Application Programming Interface', 'Giao diện để frontend trao đổi dữ liệu với backend qua HTTP.'],
+  ['JWT', 'JSON Web Token', 'Token xác thực phiên đăng nhập quản trị.'],
+  ['Migration', 'Thay đổi lược đồ có phiên bản', 'Các file SQL tạo/cập nhật cấu trúc CSDL theo thứ tự.'],
+  ['Seed', 'Khởi tạo dữ liệu mẫu', 'Nạp sản phẩm, khách hàng, đơn hàng mẫu để phát triển và trình diễn.'],
+  ['EXPLAIN ANALYZE', 'Kế hoạch thực thi', 'Lệnh PostgreSQL cho biết planner dùng index nào và mất bao lâu.'],
+  ['pgbench', 'Công cụ đo tải', 'Công cụ chuẩn của PostgreSQL mô phỏng nhiều client đồng thời.'],
+];
+
+/** Trang danh mục thuật ngữ — dựng TRƯỚC thân bài để là Bảng 1 */
+function termsPage() {
+  H.regH1('DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT');
+  return [
+    pageBreak(),
+    center('DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT', { bold: true, size: 28, color: H.BLUE, after: 160 }),
+    ...H.table([{ w: 3.2, h: 'Thuật ngữ' }, { w: 4.8, h: 'Tên đầy đủ / nghĩa' }, { w: 8, h: 'Cách dùng trong đề tài' }], TERMS, 1, 'Danh mục thuật ngữ và từ viết tắt'),
+  ];
+}
+
+/** Mục lục + danh mục hình/bảng — dựng SAU CÙNG (registry đã đầy đủ), nhưng đặt trước thuật ngữ trong tài liệu */
 function tocPages() {
   return [
-    center('MỤC LỤC', { bold: true, size: 28, after: 240 }),
-    ...H.tocHeadings(),
     pageBreak(),
-    center('DANH MỤC HÌNH ẢNH', { bold: true, size: 28, after: 240 }),
+    center('MỤC LỤC', { bold: true, size: 28, color: H.BLUE, after: 240 }),
+    ...H.tocHeadings(1),
+    pageBreak(),
+    center('DANH MỤC HÌNH ẢNH', { bold: true, size: 28, color: H.BLUE, after: 240 }),
     ...H.tocFigures(),
-    pageBreak(),
-    center('DANH MỤC BẢNG BIỂU', { bold: true, size: 28, after: 240 }),
+    new Paragraph({ spacing: { before: 360 } }),
+    center('DANH MỤC BẢNG BIỂU', { bold: true, size: 28, color: H.BLUE, after: 240 }),
     ...H.tocTables(),
+  ];
+}
+
+function summary() {
+  return [
     pageBreak(),
-    center('DANH MỤC TỪ VIẾT TẮT', { bold: true, size: 28, after: 240 }),
-    ...H.table(
-      [{ w: 3, h: 'Từ viết tắt' }, { w: 6, h: 'Tiếng Anh' }, { w: 7, h: 'Ý nghĩa' }],
-      [
-        ['CSDL', 'Database', 'Cơ sở dữ liệu'],
-        ['HQTCSDL', 'DBMS – Database Management System', 'Hệ quản trị cơ sở dữ liệu'],
-        ['SQL', 'Structured Query Language', 'Ngôn ngữ truy vấn có cấu trúc'],
-        ['ORM', 'Object-Relational Mapping', 'Ánh xạ đối tượng – quan hệ (thư viện trung gian giữa code và SQL)'],
-        ['API', 'Application Programming Interface', 'Giao diện lập trình ứng dụng'],
-        ['JSON / JSONB', 'JavaScript Object Notation (Binary)', 'Định dạng dữ liệu dạng cặp khoá–giá trị; JSONB là dạng nhị phân có index trong PostgreSQL'],
-        ['FTS', 'Full-Text Search', 'Tìm kiếm toàn văn'],
-        ['GIN', 'Generalized Inverted Index', 'Chỉ mục đảo ngược tổng quát'],
-        ['BRIN', 'Block Range Index', 'Chỉ mục theo khoảng khối'],
-        ['HNSW', 'Hierarchical Navigable Small World', 'Thuật toán index tìm láng giềng gần nhất cho vector'],
-        ['MVCC', 'Multi-Version Concurrency Control', 'Điều khiển đồng thời đa phiên bản'],
-        ['ACID', 'Atomicity, Consistency, Isolation, Durability', 'Bốn tính chất của giao dịch'],
-        ['SSE', 'Server-Sent Events', 'Cơ chế máy chủ đẩy sự kiện xuống trình duyệt'],
-        ['JWT', 'JSON Web Token', 'Chuỗi xác thực phiên đăng nhập'],
-      ], null),
-    pageBreak(),
+    ...H.regH1('TÓM TẮT'),
+    center('TÓM TẮT', { bold: true, size: 28, color: H.BLUE, after: 240 }),
+    RP('Đề tài xây dựng hệ thống bán hàng trang sức trực tuyến trên hệ quản trị PostgreSQL 16, với mục tiêu kép: nghiên cứu các tính năng khác biệt của PostgreSQL so với các HQTCSDL phổ biến và vận dụng chúng vào một ứng dụng hoàn chỉnh có giao diện khách hàng và quản trị. Phương pháp thực hiện gồm phân tích nghiệp vụ bán trang sức; thiết kế lược đồ 8 bảng với đầy đủ khoá, ràng buộc và generated column; viết lược đồ bằng SQL thuần trong 6 file migration; hiện thực backend Node.js/Fastify không dùng ORM và frontend Next.js; đóng gói bằng Docker Compose. Sáu tính năng của PostgreSQL được gắn với sáu bài toán nghiệp vụ cụ thể: JSONB cho thuộc tính sản phẩm linh hoạt, full-text search tiếng Việt kết hợp pg_trgm, pgvector cho gợi ý sản phẩm tương tự, partitioning theo tháng và BRIN cho bảng đơn hàng, transaction với SELECT … FOR UPDATE chống bán quá tồn kho, materialized view và LISTEN/NOTIFY cho dashboard thời gian thực. Kết quả đo trên 1.035.853 đơn hàng bằng công cụ đo tự viết cho thấy index phù hợp nhanh hơn quét tuần tự từ 2,6 đến hơn 1.000 lần, partition pruning chỉ quét 1/37 partition, BRIN nhỏ hơn B-tree 26 lần, và 50 client đặt hàng đồng thời không bao giờ bán quá tồn kho.'),
   ];
 }
 
 function intro() {
   return [
-    H1('Mở đầu'),
+    pageBreak(),
+    ...H.regH1('LỜI MỞ ĐẦU'),
+    center('LỜI MỞ ĐẦU', { bold: true, size: 28, color: H.BLUE, after: 240 }),
     H2('1. Lý do chọn đề tài'),
     RP('Trong hoạt động kinh doanh trang sức, dữ liệu có nhiều đặc thù: mỗi loại sản phẩm (nhẫn, bông tai, dây chuyền, vòng tay…) có bộ thuộc tính khác nhau (ni nhẫn, carat, chiều dài dây, loại đá…); tồn kho mỗi mã thường rất ít, có khi chỉ một chiếc; khách hàng tìm kiếm bằng tiếng Việt có dấu hoặc không dấu và hay gõ sai chính tả; đơn hàng tích luỹ ngày càng lớn theo thời gian; người quản lý cần báo cáo doanh thu nhanh và được cảnh báo kịp thời khi hàng sắp hết. Một hệ quản trị CSDL quan hệ thông thường chỉ với bảng – khoá – index B-tree giải quyết được bài toán nhưng không tối ưu, thường phải kéo thêm nhiều thành phần bên ngoài (Elasticsearch để tìm kiếm, Redis để cache, hàng đợi để thông báo…).'),
     RP('PostgreSQL là HQTCSDL mã nguồn mở đang đứng thứ 4 bảng xếp hạng DB-Engines và là hệ CSDL có mức tăng điểm cao nhất nửa đầu năm 2026 [1][2]. Điểm mạnh của PostgreSQL không chỉ ở việc tuân thủ chuẩn SQL mà còn ở hệ sinh thái tính năng và extension phong phú: JSONB, full-text search, pgvector, partitioning, nhiều loại index chuyên biệt, materialized view, LISTEN/NOTIFY… Những tính năng này cho phép giải quyết trọn vẹn các đặc thù nêu trên ngay bên trong một CSDL duy nhất.'),
@@ -139,4 +159,4 @@ function intro() {
   ];
 }
 
-module.exports = { coverPage, reviewPage, tocPages, intro, INFO };
+module.exports = { coverPage, reviewPage, termsPage, tocPages, summary, intro, INFO };

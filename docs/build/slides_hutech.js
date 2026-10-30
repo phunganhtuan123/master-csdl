@@ -1,4 +1,6 @@
 // Slide báo cáo theo template bài giảng HUTECH (4:3, thanh xanh 2A10B4, logo góc trái, Trebuchet MS / Arial)
+// Nguyên tắc bố cục: mỗi slide lấp đầy khung 0.8..9.7 x 1.5..6.9; ít chữ, khối lớn; slide tính năng dùng
+// cùng một khung 3 vùng: dải "Bài toán" → cột trái "Giải pháp" (SQL nền tối chữ to) → cột phải "Kết quả" (số lớn + ảnh)
 const pptxgen = require('pptxgenjs');
 const path = require('path');
 const { applyTheme } = require('/root/.claude/skills/synced/91879b9e-0144-4212-bb51-3950dfa56628_22d3ddbc-74b0-4b5b-a461-e8a2fd2bb0c4/pptx/scripts/apply_theme.js');
@@ -6,20 +8,22 @@ const { applyTheme } = require('/root/.claude/skills/synced/91879b9e-0144-4212-b
 const IMG = (f) => path.resolve(__dirname, '../img', f);
 const OUT = path.resolve(__dirname, '../Slide_CSDL_Nhom6_PostgreSQL.pptx');
 
-const BLUE = '2A10B4', YELLOW = 'FFD54A', GRAY = 'D6D6D6', LIGHT = 'EEF0FA', INK = '1A1A1A';
+const BLUE = '2A10B4', YELLOW = 'FFD54A', GRAY = 'D6D6D6', LIGHT = 'EEF0FA', INK = '1A1A1A', DARK = '1E1B2E', MUTED = '555555';
+const GREEN = '1E8E3E', RED = 'C62828', TEAL = '0B7285', ORANGE = 'E65100';
 const THEME = {
   name: 'HUTECH', headFontFace: 'Trebuchet MS', bodyFontFace: 'Arial',
-  colors: { dk1: INK, lt1: 'FFFFFF', dk2: BLUE, lt2: LIGHT, accent1: BLUE, accent2: 'FFC000', accent3: '1E8E3E', accent4: 'C62828', accent5: '0B7285', accent6: '666666', hlink: BLUE, folHlink: '666666' },
+  colors: { dk1: INK, lt1: 'FFFFFF', dk2: BLUE, lt2: LIGHT, accent1: BLUE, accent2: 'FFC000', accent3: GREEN, accent4: RED, accent5: TEAL, accent6: MUTED, hlink: BLUE, folHlink: MUTED },
 };
 
 const pres = new pptxgen();
-pres.layout = 'LAYOUT_4x3';          // 10 x 7.5 in — giống slide bài giảng
+pres.layout = 'LAYOUT_4x3';
 pres.theme = { headFontFace: THEME.headFontFace, bodyFontFace: THEME.bodyFontFace };
 pres.title = 'Xây dựng hệ thống bán hàng trang sức với PostgreSQL';
 pres.author = 'Nhóm 6';
-const C = pres.SchemeColor;
 
-// ---------- Layout nội dung: logo + "HUTECH University", thanh tiêu đề xanh, thanh dọc trái, số trang ----------
+// Vùng nội dung
+const X0 = 0.8, W0 = 8.9, Y0 = 1.5, Y1 = 6.95;
+
 pres.defineSlideMaster({
   title: 'HUTECH', background: { color: 'FFFFFF' },
   objects: [
@@ -33,37 +37,49 @@ pres.defineSlideMaster({
 });
 
 // ---------- Helpers ----------
-const X0 = 0.8, W0 = 8.9;      // vùng nội dung
 const T = (slide, text, o) => slide.addText(text, { fontFace: 'Arial', color: INK, margin: 0, isTextBox: true, valign: 'top', ...o });
-const bullets = (slide, items, x, y, w, h, fontSize = 18) =>
-  slide.addText(items.map((t, i) => ({ text: t, options: { bullet: { indent: 16 }, breakLine: i < items.length - 1, paraSpaceAfter: 6 } })),
-    { x, y, w, h, fontFace: 'Arial', fontSize, color: INK, valign: 'top', margin: 0, isTextBox: true, objectName: 'bullets' });
-const codeBox = (slide, text, x, y, w, h, fontSize = 13) => {
-  slide.addShape(pres.ShapeType.rect, { x, y, w, h, fill: { color: 'F4F4F4' }, line: { color: 'BBBBBB', width: 0.75 }, objectName: 'code-bg' });
+const bullets = (slide, items, x, y, w, h, fontSize = 18, color = INK) =>
+  slide.addText(items.map((t, i) => ({ text: t, options: { bullet: { indent: 18 }, breakLine: i < items.length - 1, paraSpaceAfter: 8 } })),
+    { x, y, w, h, fontFace: 'Arial', fontSize, color, valign: 'top', margin: 0, isTextBox: true, objectName: 'bullets' });
+/** Khối SQL nền tối, chữ to, có nhãn file ở góc */
+const codeBox = (slide, text, x, y, w, h, fontSize = 15, label = null) => {
+  slide.addShape(pres.ShapeType.roundRect, { x, y, w, h, fill: { color: DARK }, line: { color: DARK }, rectRadius: 0.08, objectName: 'code-bg' });
+  if (label) T(slide, label, { x: x + w - 2.6, y: y + h - 0.3, w: 2.5, h: 0.3, fontSize: 10, color: '9A96B8', align: 'right', fontFace: 'Courier New' });
   slide.addText(text.split('\n').map((l, i, a) => ({ text: l, options: { breakLine: i < a.length - 1 } })),
-    { x: x + 0.12, y: y + 0.08, w: w - 0.24, h: h - 0.16, fontSize, fontFace: 'Courier New', color: '222222', valign: 'top', margin: 0, isTextBox: true, objectName: 'code' });
+    { x: x + 0.18, y: y + 0.18, w: w - 0.36, h: h - 0.3, fontSize, fontFace: 'Courier New', color: 'F2F0FF', valign: 'top', margin: 0, isTextBox: true, objectName: 'code' });
 };
-const stat = (slide, num, label, x, y, w, color = BLUE) => {
-  slide.addShape(pres.ShapeType.rect, { x, y, w, h: 1.45, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'stat-bg' });
-  T(slide, num, { x, y: y + 0.08, w, h: 0.75, fontSize: 32, bold: true, color, align: 'center', valign: 'middle', objectName: 'stat-num' });
-  T(slide, label, { x: x + 0.1, y: y + 0.85, w: w - 0.2, h: 0.55, fontSize: 12, color: '333333', align: 'center', objectName: 'stat-label' });
+/** Thẻ số lớn */
+const stat = (slide, num, label, x, y, w, h = 1.5, color = BLUE, numSize = 36) => {
+  slide.addShape(pres.ShapeType.roundRect, { x, y, w, h, fill: { color: LIGHT }, line: { color: LIGHT }, rectRadius: 0.08, objectName: 'stat-bg' });
+  T(slide, num, { x, y: y + 0.1, w, h: h * 0.55, fontSize: numSize, bold: true, color, align: 'center', valign: 'middle', fontFace: 'Trebuchet MS', objectName: 'stat-num' });
+  T(slide, label, { x: x + 0.12, y: y + h * 0.6, w: w - 0.24, h: h * 0.4 - 0.05, fontSize: 12, color: MUTED, align: 'center', objectName: 'stat-label' });
 };
-const pill = (slide, n, text, x, y, w) => {
-  slide.addShape(pres.ShapeType.roundRect, { x, y, w, h: 0.55, fill: { color: 'FFFFFF' }, line: { color: BLUE, width: 1 }, rectRadius: 0.12, shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 0.25 }, objectName: 'pill' });
-  slide.addShape(pres.ShapeType.ellipse, { x: x + 0.1, y: y + 0.08, w: 0.39, h: 0.39, fill: { color: BLUE }, line: { color: BLUE }, objectName: 'pill-dot' });
-  T(slide, String(n), { x: x + 0.1, y: y + 0.08, w: 0.39, h: 0.39, fontSize: 13, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle' });
-  T(slide, text, { x: x + 0.6, y, w: w - 0.7, h: 0.55, fontSize: 15, valign: 'middle' });
+/** Dải "Bài toán" trên cùng của slide tính năng */
+const problem = (slide, text) => {
+  slide.addShape(pres.ShapeType.rect, { x: X0, y: Y0, w: W0, h: 0.72, fill: { color: 'FFF4E5' }, line: { color: 'FFF4E5' }, objectName: 'problem-bg' });
+  T(slide, 'BÀI TOÁN', { x: X0 + 0.15, y: Y0 + 0.06, w: 1.3, h: 0.6, fontSize: 11, bold: true, color: ORANGE, valign: 'middle', charSpacing: 1 });
+  T(slide, text, { x: X0 + 1.35, y: Y0 + 0.06, w: W0 - 1.5, h: 0.6, fontSize: 15, color: INK, valign: 'middle' });
 };
-const img = (slide, file, x, y, w, h) => slide.addImage({ path: IMG(file), x, y, w, h, sizing: { type: 'contain', w, h }, objectName: file });
-// Bảng kiểu template: header xám đậm chữ đen, dòng xen kẽ xám nhạt, viền đen mảnh
+/** Nhãn mục nhỏ in hoa */
+const label = (slide, text, x, y, w, color = BLUE) => T(slide, text, { x, y, w, h: 0.3, fontSize: 11, bold: true, color, charSpacing: 1 });
+const pill = (slide, n, text, x, y, w, h = 0.6, fs = 17) => {
+  slide.addShape(pres.ShapeType.roundRect, { x, y, w, h, fill: { color: 'FFFFFF' }, line: { color: BLUE, width: 1 }, rectRadius: 0.12, shadow: { type: 'outer', blur: 3, offset: 2, angle: 45, color: '000000', opacity: 0.22 }, objectName: 'pill' });
+  slide.addShape(pres.ShapeType.ellipse, { x: x + 0.12, y: y + (h - 0.42) / 2, w: 0.42, h: 0.42, fill: { color: BLUE }, line: { color: BLUE }, objectName: 'pill-dot' });
+  T(slide, String(n), { x: x + 0.12, y: y + (h - 0.42) / 2, w: 0.42, h: 0.42, fontSize: 14, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle' });
+  T(slide, text, { x: x + 0.68, y, w: w - 0.8, h, fontSize: fs, valign: 'middle' });
+};
+const img = (slide, file, x, y, w, h, frame = true) => {
+  if (frame) slide.addShape(pres.ShapeType.rect, { x: x - 0.04, y: y - 0.04, w: w + 0.08, h: h + 0.08, fill: { color: 'FFFFFF' }, line: { color: GRAY, width: 1 }, shadow: { type: 'outer', blur: 4, offset: 2, angle: 45, color: '000000', opacity: 0.18 }, objectName: 'frame' });
+  slide.addImage({ path: IMG(file), x, y, w, h, sizing: { type: 'cover', w, h }, objectName: file });
+};
 const table = (slide, header, rows, x, y, w, colW, fontSize = 14, rowH = 0.5) =>
   slide.addTable([
     header.map((h) => ({ text: h, options: { bold: true, fill: { color: GRAY }, align: 'center' } })),
     ...rows.map((r, i) => r.map((c) => (typeof c === 'string' ? { text: c, options: { fill: { color: i % 2 ? 'F2F2F2' : 'FFFFFF' } } } : { ...c, options: { ...c.options, fill: { color: i % 2 ? 'F2F2F2' : 'FFFFFF' } } }))),
-  ], { x, y, w, colW, rowH, fontFace: 'Arial', fontSize, color: INK, border: { type: 'solid', color: '000000', pt: 0.75 }, valign: 'middle', margin: 0.06, objectName: 'table' });
+  ], { x, y, w, colW, rowH, fontFace: 'Arial', fontSize, color: INK, border: { type: 'solid', color: '000000', pt: 0.75 }, valign: 'middle', margin: 0.07, objectName: 'table' });
 const content = (title, section) => { const s = pres.addSlide({ masterName: 'HUTECH', sectionTitle: section }); s.addText(title, { placeholder: 'title' }); return s; };
 
-// ====================================================================== 1. Bìa (giống slide 1 của cô)
+// ====================================================================== 1. Bìa
 pres.addSection({ title: 'Mở đầu' });
 let s = pres.addSlide({ sectionTitle: 'Mở đầu' });
 s.background = { color: 'FFFFFF' };
@@ -74,228 +90,279 @@ s.addShape(pres.ShapeType.rect, { x: 1.85, y: 1.8, w: 8.15, h: 5.7, fill: { colo
 T(s, 'TIỂU LUẬN MÔN CƠ SỞ DỮ LIỆU', { x: 2.1, y: 2.3, w: 7.7, h: 0.5, fontSize: 16, color: YELLOW, align: 'center', fontFace: 'Trebuchet MS', charSpacing: 2 });
 T(s, 'XÂY DỰNG HỆ THỐNG BÁN HÀNG TRANG SỨC VỚI POSTGRESQL', { x: 2.1, y: 2.9, w: 7.7, h: 1.6, fontSize: 28, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', fontFace: 'Trebuchet MS' });
 T(s, 'Nhóm 6', { x: 2.1, y: 4.9, w: 7.7, h: 0.45, fontSize: 20, bold: true, color: YELLOW, align: 'center' });
-T(s, [
-  { text: 'Phùng Anh Tuấn – 2541864024', options: { breakLine: true } },
-  { text: 'Võ Bùi Duy Thông – 2541864019' },
-], { x: 2.1, y: 5.4, w: 7.7, h: 0.9, fontSize: 18, color: 'FFFFFF', align: 'center' });
-T(s, 'GVHD: ……………………………   ·   Tháng 10/2026', { x: 2.1, y: 6.55, w: 7.7, h: 0.4, fontSize: 14, color: 'DDDDFF', align: 'center' });
-s.addNotes('Giới thiệu nhóm và đề tài.');
+T(s, [{ text: 'Phùng Anh Tuấn – 2541864024', options: { breakLine: true } }, { text: 'Võ Bùi Duy Thông – 2541864019' }], { x: 2.1, y: 5.4, w: 7.7, h: 0.9, fontSize: 18, color: 'FFFFFF', align: 'center' });
+T(s, 'GVHD: TS. Lê Thị Ngọc Thảo   ·   Lớp 25SCT41   ·   Tháng 10/2026', { x: 2.1, y: 6.55, w: 7.7, h: 0.4, fontSize: 14, color: 'DDDDFF', align: 'center' });
 
-// ====================================================================== 2. Nội dung (giống slide "Nội dung" của cô)
+// ====================================================================== 2. Nội dung
 s = content('Nội dung', 'Mở đầu');
-const toc = ['Vì sao chọn PostgreSQL', 'Kiến trúc hệ thống & thiết kế CSDL', '6 tính năng nổi bật gắn với nghiệp vụ', 'Các loại index đặc biệt', 'Ứng dụng demo & benchmark', 'Kết luận'];
-toc.forEach((t, i) => pill(s, i + 1, t, 1.3, 1.65 + i * 0.85, 7.6));
+['Vì sao chọn PostgreSQL', 'Kiến trúc hệ thống & thiết kế CSDL', '6 tính năng nổi bật gắn với nghiệp vụ', 'Các loại index đặc biệt', 'Demo, benchmark trên 1 triệu đơn hàng', 'Kết luận']
+  .forEach((t, i) => pill(s, i + 1, t, 1.2, 1.65 + i * 0.86, 7.9, 0.66));
 
 // ====================================================================== 3. Vì sao PostgreSQL
 s = content('Vì sao chọn PostgreSQL?', 'Mở đầu');
-stat(s, '#4', 'DB-Engines (sau Oracle,\nMySQL, SQL Server)', X0, 1.6, 2.1);
-stat(s, '+21,97', 'điểm nửa đầu 2026\ntăng mạnh nhất top 5', X0 + 2.27, 1.6, 2.1, THEME.colors.accent3);
-stat(s, '4 lần', 'DBMS of the Year\n2017 · 2018 · 2020 · 2023', X0 + 4.54, 1.6, 2.1, THEME.colors.accent5);
-stat(s, '100%', 'mã nguồn mở, không có\nbản Enterprise thu phí', X0 + 6.81, 1.6, 2.09, THEME.colors.accent4);
-T(s, 'CSDL quan hệ + đa mô hình trong một hệ thống', { x: X0, y: 3.35, w: W0, h: 0.5, fontSize: 20, bold: true, color: BLUE });
-bullets(s, [
-  'JSONB, mảng, full-text search, pgvector… ngay trong SQL chuẩn',
-  '6 loại index: B-tree, Hash, GIN, GiST, SP-GiST, BRIN',
-  'Partition khai báo, materialized view, trigger, PL/pgSQL, LISTEN/NOTIFY',
-  'Nhiều nhóm cùng chọn PostgreSQL → nhóm 6 làm theo cách: mỗi tính năng gắn 1 nghiệp vụ thật và có số đo',
-], X0, 3.95, W0, 3.0, 17);
+stat(s, '#4', 'DB-Engines, sau Oracle,\nMySQL, SQL Server', X0, Y0, 2.1, 1.4);
+stat(s, '+21,97', 'điểm nửa đầu 2026\ntăng mạnh nhất top 5', X0 + 2.27, Y0, 2.1, 1.4, GREEN);
+stat(s, '4 lần', 'DBMS of the Year\n2017 · 2018 · 2020 · 2023', X0 + 4.54, Y0, 2.1, 1.4, TEAL);
+stat(s, '100%', 'mã nguồn mở, không có\nbản Enterprise thu phí', X0 + 6.81, Y0, 2.09, 1.4, RED);
+// hai cột: quan hệ vs đa mô hình
+label(s, 'CSDL QUAN HỆ ĐẦY ĐỦ', X0, 3.15, 4.3);
+bullets(s, ['Giao dịch ACID, MVCC: đọc không chặn ghi', 'Khoá ngoại, CHECK, UNIQUE, generated column', 'DDL nằm trong transaction → migration an toàn', 'Hàm PL/pgSQL, trigger: logic nằm sát dữ liệu'], X0, 3.5, 4.3, 2.6, 15);
+label(s, '+ ĐA MÔ HÌNH TRONG CÙNG MỘT HỆ THỐNG', X0 + 4.6, 3.15, 4.3);
+bullets(s, ['JSONB, mảng, full-text search, pgvector', '6 loại index: B-tree, Hash, GIN, GiST, SP-GiST, BRIN', 'Partition, materialized view, LISTEN/NOTIFY', 'Extension: pgvector, pg_trgm, unaccent, pg_stat_statements'], X0 + 4.6, 3.5, 4.3, 2.6, 15);
+s.addShape(pres.ShapeType.rect, { x: X0, y: 6.2, w: W0, h: 0.7, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'punch-bg' });
+T(s, 'Cách làm của nhóm 6: mỗi tính năng PostgreSQL gắn với 1 nghiệp vụ thật của cửa hàng trang sức và có số đo trên 1 triệu đơn hàng', { x: X0 + 0.2, y: 6.2, w: W0 - 0.4, h: 0.7, fontSize: 14, bold: true, color: BLUE, valign: 'middle' });
 
 // ====================================================================== 4. Đặc thù → tính năng
 s = content('6 đặc thù nghiệp vụ – 6 tính năng PostgreSQL', 'Mở đầu');
-table(s, ['Đặc thù bán trang sức', 'Tính năng PostgreSQL'], [
-  ['1. Mỗi loại trang sức có thuộc tính khác nhau (ni, carat, dài dây…)', { text: 'JSONB + GIN index', options: { bold: true, color: BLUE } }],
-  ['2. Khách gõ không dấu, sai chính tả vẫn phải tìm ra', { text: 'Full-text search + unaccent + pg_trgm', options: { bold: true, color: BLUE } }],
-  ['3. Gợi ý “sản phẩm giống” khi xem chi tiết', { text: 'pgvector + HNSW', options: { bold: true, color: BLUE } }],
-  ['4. Đơn hàng tăng mãi theo thời gian', { text: 'Partitioning theo tháng + BRIN', options: { bold: true, color: BLUE } }],
-  ['5. Tồn kho ít, 2 khách mua cùng lúc chiếc cuối', { text: 'Transaction + SELECT … FOR UPDATE', options: { bold: true, color: BLUE } }],
-  ['6. Dashboard nhanh, báo hết hàng tức thì', { text: 'Materialized view + LISTEN/NOTIFY', options: { bold: true, color: BLUE } }],
-], X0, 1.65, W0, [5.2, 3.7], 15, 0.72);
+const map = [
+  ['Mỗi loại trang sức có thuộc tính khác nhau (ni, carat, dài dây…)', 'JSONB + GIN index'],
+  ['Khách gõ không dấu, sai chính tả vẫn phải tìm ra', 'Full-text search + unaccent + pg_trgm'],
+  ['Gợi ý “sản phẩm giống” khi xem chi tiết', 'pgvector + HNSW'],
+  ['Đơn hàng tăng mãi theo thời gian', 'Partitioning theo tháng + BRIN'],
+  ['Tồn kho ít, 2 khách mua cùng lúc chiếc cuối', 'Transaction + SELECT … FOR UPDATE'],
+  ['Dashboard nhanh, báo hết hàng tức thì', 'Materialized view + LISTEN/NOTIFY'],
+];
+map.forEach(([a, b], i) => {
+  const y = Y0 + i * 0.9;
+  s.addShape(pres.ShapeType.ellipse, { x: X0, y: y + 0.1, w: 0.55, h: 0.55, fill: { color: BLUE }, line: { color: BLUE }, objectName: 'n' });
+  T(s, String(i + 1), { x: X0, y: y + 0.1, w: 0.55, h: 0.55, fontSize: 16, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle' });
+  T(s, a, { x: X0 + 0.7, y, w: 4.5, h: 0.75, fontSize: 15, valign: 'middle' });
+  T(s, '→', { x: X0 + 5.2, y, w: 0.4, h: 0.75, fontSize: 20, color: MUTED, align: 'center', valign: 'middle' });
+  s.addShape(pres.ShapeType.roundRect, { x: X0 + 5.6, y: y + 0.08, w: 3.3, h: 0.6, fill: { color: LIGHT }, line: { color: LIGHT }, rectRadius: 0.08, objectName: 'f-bg' });
+  T(s, b, { x: X0 + 5.7, y: y + 0.08, w: 3.1, h: 0.6, fontSize: 14, bold: true, color: BLUE, valign: 'middle' });
+});
 
 // ====================================================================== 5. Kiến trúc
 pres.addSection({ title: 'Thiết kế' });
 s = content('Kiến trúc hệ thống', 'Thiết kế');
-img(s, 'architecture.jpg', X0, 1.55, W0, 2.1);
-bullets(s, [
-  'PostgreSQL 16 + pgvector · Node.js + Fastify, SQL thuần (không ORM) · Next.js 15 (khách + admin)',
-  'Logic quan trọng nằm trong CSDL: hàm place_order(), cancel_order(), trigger NOTIFY',
-  '6 file migration SQL; trình chạy migration tự viết 60 dòng, mỗi file = 1 transaction',
-  'docker compose up → db + api + web; npm run seed:big → 1 triệu đơn, npm run bench → báo cáo đo',
-], X0, 3.85, W0, 3.1, 17);
+img(s, 'architecture.jpg', X0, Y0, W0, 2.75, false);
+const cols = [
+  ['PostgreSQL 16 + pgvector', 'Lược đồ, index, hàm place_order(), trigger NOTIFY — logic quan trọng nằm trong CSDL', BLUE],
+  ['Node.js + Fastify, SQL thuần', 'Không ORM: pool.query($1,$2); migration runner tự viết 60 dòng, mỗi file = 1 transaction', TEAL],
+  ['Next.js 15', 'Trang bán hàng (SSR) + trang quản trị (JWT, SSE nhận thông báo từ PostgreSQL)', GREEN],
+];
+cols.forEach(([h, d, c], i) => {
+  const x = X0 + i * 3.03, y = 4.45;
+  s.addShape(pres.ShapeType.roundRect, { x, y, w: 2.83, h: 2.4, fill: { color: 'FFFFFF' }, line: { color: c, width: 1.5 }, rectRadius: 0.08, objectName: 'col' });
+  s.addShape(pres.ShapeType.rect, { x, y, w: 2.83, h: 0.55, fill: { color: c }, line: { color: c }, objectName: 'col-h' });
+  T(s, h, { x: x + 0.12, y, w: 2.6, h: 0.55, fontSize: 14, bold: true, color: 'FFFFFF', valign: 'middle' });
+  T(s, d, { x: x + 0.15, y: y + 0.65, w: 2.55, h: 1.7, fontSize: 13, color: INK });
+});
 
 // ====================================================================== 6. ERD
 s = content('Thiết kế CSDL: 8 bảng', 'Thiết kế');
-img(s, 'erd.jpg', X0, 1.5, W0, 5.0);
-T(s, 'Cột tô màu = nơi áp dụng tính năng đặc biệt của PostgreSQL', { x: X0, y: 6.6, w: W0, h: 0.4, fontSize: 14, italic: true, color: '444444' });
-s.addNotes('products: attributes JSONB, search_vec tsvector generated, embedding vector(256). orders: partition theo tháng, total generated.');
+img(s, 'erd.jpg', X0, Y0, W0, 4.6, false);
+const legend = [['products', 'JSONB · tsvector · vector(256)', BLUE], ['orders', 'PARTITION BY RANGE (created_at)', TEAL], ['place_order()', 'transaction + FOR UPDATE', GREEN], ['mv_sales_daily', 'materialized view', ORANGE]];
+legend.forEach(([a, b, c], i) => {
+  const x = X0 + i * 2.25;
+  s.addShape(pres.ShapeType.rect, { x, y: 6.25, w: 0.12, h: 0.6, fill: { color: c }, line: { color: c }, objectName: 'lg' });
+  T(s, a, { x: x + 0.2, y: 6.22, w: 2.0, h: 0.3, fontSize: 13, bold: true, color: c });
+  T(s, b, { x: x + 0.2, y: 6.52, w: 2.0, h: 0.35, fontSize: 11, color: MUTED });
+});
 
-// ====================================================================== 7–12. Sáu tính năng
+// ====================================================================== 7–12. Sáu tính năng: khung 3 vùng
 pres.addSection({ title: '6 tính năng' });
 const feature = (n, title) => content(`${n}. ${title}`, '6 tính năng');
+const LX = X0, LW = 5.3, RX = X0 + 5.5, RW = 3.4, TY = Y0 + 0.9;   // cột trái/phải dưới dải bài toán
 
 s = feature(1, 'JSONB – thuộc tính sản phẩm linh hoạt');
+problem(s, 'Nhẫn có ni, carat, nước màu; dây chuyền có chiều dài; vòng có đường kính… Thêm cột → hàng chục cột NULL; bảng EAV → JOIN nhiều lần.');
+label(s, 'GIẢI PHÁP', LX, TY, 3);
 codeBox(s, `attributes JSONB NOT NULL DEFAULT '{}'
+
 CREATE INDEX idx_products_attributes
-  ON products USING GIN (attributes jsonb_path_ops);
+  ON products USING GIN
+  (attributes jsonb_path_ops);
 
--- Nhẫn
-{"metal":"Vàng trắng 18K","ring_size":12,
- "stone":"Kim cương","carat":0.5}
--- Dây chuyền
-{"metal":"Vàng 24K","length_cm":50}
-
--- Lọc: 1 câu SQL cho mọi tổ hợp thuộc tính
-WHERE attributes @>
-  '{"metal":"Vàng 18K","stone":"Kim cương"}'`, X0, 1.55, 5.6, 4.0, 13);
-stat(s, '34×', 'nhanh hơn quét tuần tự\n0,06 ms so với 2,1 ms', 6.6, 1.55, 3.1);
-bullets(s, ['Không ALTER TABLE khi thêm loại trang sức mới', 'Admin thêm/xoá thuộc tính ngay trên giao diện', 'Bộ lọc bên trái cũng sinh từ JSONB'], 6.6, 3.2, 3.1, 2.4, 14);
-T(s, 'Planner: Bitmap Index Scan on idx_products_attributes', { x: X0, y: 5.7, w: W0, h: 0.4, fontSize: 14, italic: true, color: '444444' });
+-- 1 câu SQL cho mọi tổ hợp bộ lọc
+SELECT * FROM products
+WHERE attributes @> '{"metal":"Vàng 18K",
+                      "stone":"Kim cương"}';`, LX, TY + 0.35, LW, 3.1, 13, '002 · 004_indexes.sql');
+bullets(s, ['Thêm loại trang sức mới: không ALTER TABLE', 'Bộ lọc chất liệu / đá trên web sinh từ JSONB'], LX, TY + 3.6, LW, 0.9, 14);
+label(s, 'KẾT QUẢ', RX, TY, 3);
+stat(s, '34×', 'nhanh hơn quét tuần tự\n0,06 ms so với 2,1 ms', RX, TY + 0.35, RW, 1.35);
+img(s, 'slide-jsonb-admin.jpg', RX, TY + 1.9, RW, 2.6);
 
 s = feature(2, 'Full-text search tiếng Việt');
-codeBox(s, `-- Hàm bỏ dấu, IMMUTABLE để dùng trong index
-CREATE FUNCTION vi_unaccent(text) ... IMMUTABLE
-  AS $$ SELECT lower(unaccent($1)) $$;
+problem(s, 'Khách gõ “nhan kim cuong 18k” (không dấu) hoặc “nhan kim cuog solitare” (sai chính tả) vẫn phải tìm ra đúng sản phẩm. LIKE không có index, không xếp hạng.');
+label(s, 'GIẢI PHÁP: UNACCENT + TSVECTOR + PG_TRGM', LX, TY, 5);
+codeBox(s, `search_vec TSVECTOR GENERATED ALWAYS AS (
+  to_tsvector('simple', vi_unaccent(name))
+) STORED;
 
--- tsvector sinh tự động (generated column)
-search_vec TSVECTOR GENERATED ALWAYS AS (
-  to_tsvector('simple', vi_unaccent(name)) ...) STORED;
 CREATE INDEX ... USING GIN (search_vec);
-CREATE INDEX ... USING GIN (vi_unaccent(name) gin_trgm_ops);
+CREATE INDEX ... USING GIN
+  (vi_unaccent(name) gin_trgm_ops);
 
--- Tầng 1: search_vec @@ plainto_tsquery(vi_unaccent($1))
--- Tầng 2: vi_unaccent(name) % 'nhan kim cuog solitare'`, X0, 1.55, 5.6, 3.6, 12);
-img(s, '05-tim-kiem-trigram.jpg', 6.6, 1.55, 3.1, 1.95);
-T(s, '“nhan kim cuog solitare” → Nhẫn kim cương vàng 18K Solitaire (trigram 0,44)', { x: 6.6, y: 3.55, w: 3.1, h: 0.9, fontSize: 12, italic: true, color: '444444' });
-stat(s, '9,6×', 'FTS có GIN so với\nquét tuần tự', 6.6, 4.55, 3.1);
-bullets(s, ['Không dấu / có dấu đều khớp, xếp hạng ts_rank, tô đậm ts_headline', 'Gõ sai chính tả → tự chuyển sang trigram (pg_trgm)', 'Gợi ý khi gõ bằng prefix search  nha:* & kim:*  — không cần Elasticsearch'], X0, 5.3, 5.6, 1.7, 14);
+-- Tầng 1: full-text, xếp hạng ts_rank
+WHERE search_vec @@
+      plainto_tsquery(vi_unaccent($1))
+-- Tầng 2: sai chính tả → trigram
+WHERE vi_unaccent(name) % 'nhan kim cuog'`, LX, TY + 0.35, LW, 3.4, 13, '001 · 002 · search.js');
+T(s, 'Không cần Elasticsearch', { x: LX, y: TY + 3.85, w: LW, h: 0.5, fontSize: 18, bold: true, color: BLUE });
+label(s, 'KẾT QUẢ', RX, TY, 3);
+stat(s, '9,6×', 'FTS có GIN so với quét tuần tự', RX, TY + 0.35, RW, 1.15, BLUE, 32);
+img(s, 'slide-trigram.jpg', RX, TY + 1.7, RW, 1.7);
+T(s, '“nhan kim cuog solitare” → Nhẫn kim cương vàng 18K Solitaire (similarity 0,44)', { x: RX, y: TY + 3.5, w: RW, h: 0.9, fontSize: 12, italic: true, color: MUTED });
 
 s = feature(3, 'pgvector – gợi ý sản phẩm tương tự');
+problem(s, 'Khách xem nhẫn kim cương vàng trắng → gợi ý sản phẩm “giống”: cùng loại, cùng chất liệu, cùng đá. Quy tắc “cùng danh mục” quá thô.');
+label(s, 'GIẢI PHÁP: EMBEDDING 256 CHIỀU + INDEX HNSW', LX, TY, 5);
 codeBox(s, `embedding vector(256)
-CREATE INDEX idx_products_embedding
-  ON products USING hnsw (embedding vector_cosine_ops);
 
--- 8 sản phẩm gần nhất, <=> = khoảng cách cosine
-SELECT name,
-       1 - (p.embedding <=> me.embedding) AS sim
+CREATE INDEX idx_products_embedding
+  ON products USING hnsw
+  (embedding vector_cosine_ops);
+
+-- 8 sản phẩm gần nhất (<=> = cosine)
+SELECT p.name,
+       1 - (p.embedding <=> me.embedding) sim
 FROM products p,
      (SELECT embedding FROM products
-      WHERE slug = $1) me
+       WHERE slug = $1) me
 ORDER BY p.embedding <=> me.embedding
-LIMIT 8;`, X0, 1.55, 5.6, 3.0, 12);
-img(s, '03-chi-tiet-pgvector.jpg', 6.6, 1.55, 3.1, 4.0);
-bullets(s, [
-  'Embedding demo bằng feature hashing: tên + danh mục + thuộc tính JSONB → 256 chiều, không cần API ngoài',
-  'Thay bằng OpenAI / CLIP sau này chỉ đổi 1 hàm; schema và SQL giữ nguyên',
-  'HNSW: 0,23 ms so với 1,7 ms khi tính khoảng cách cho toàn bộ 3.033 vector (7,4×)',
-], X0, 4.7, 5.6, 2.3, 14);
+LIMIT 8;`, LX, TY + 0.35, LW, 3.45, 13, '002 · 004 · catalog.js');
+bullets(s, ['Embedding demo = feature hashing từ tên, danh mục, JSONB (không cần API ngoài); thay bằng OpenAI / CLIP chỉ đổi 1 hàm'], LX, TY + 3.9, LW, 0.65, 13);
+label(s, 'KẾT QUẢ', RX, TY, 3);
+stat(s, '7,4×', 'HNSW 0,23 ms so với 1,7 ms\ntính toàn bộ 3.033 vector', RX, TY + 0.35, RW, 1.35, BLUE, 32);
+img(s, 'slide-similar.jpg', RX, TY + 1.9, RW, 2.6);
 
 s = feature(4, 'Partitioning theo tháng + BRIN');
-codeBox(s, `CREATE TABLE orders (
-  id BIGSERIAL, created_at TIMESTAMPTZ NOT NULL, ...
+problem(s, 'Bảng đơn hàng chỉ tăng: sau vài năm hàng triệu dòng, nhưng nghiệp vụ hằng ngày chỉ chạm đơn gần đây. Index lớn, VACUUM chậm, xoá đơn cũ phải DELETE hàng loạt.');
+label(s, 'GIẢI PHÁP', LX, TY, 3);
+codeBox(s, `CREATE TABLE orders ( ...,
   PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 
-CREATE TABLE orders_2026_10 PARTITION OF orders
-  FOR VALUES FROM ('2026-10-01') TO ('2026-11-01');
+CREATE TABLE orders_2026_10
+  PARTITION OF orders
+  FOR VALUES FROM ('2026-10-01')
+               TO ('2026-11-01');
 
-CREATE INDEX ... ON orders USING BRIN (created_at);`, X0, 1.55, 5.6, 2.6, 12);
-stat(s, '1 / 37', 'partition được quét\n(1 triệu đơn) nhờ pruning', 6.6, 1.55, 3.1, THEME.colors.accent4);
-stat(s, '888 kB', 'BRIN so với 23 MB\nB-tree cùng cột (26×)', 6.6, 3.15, 3.1, THEME.colors.accent5);
-img(s, '10-admin-benchmark-explain.jpg', X0, 4.3, 5.6, 2.1);
-bullets(s, ['Doanh thu 2 tuần: 3,3 ms so với 66 ms (20×)', 'Lưu trữ đơn cũ = DETACH 1 partition', 'Tháng mới: ensure_orders_partition()'], 6.6, 4.75, 3.1, 2.2, 13);
+CREATE INDEX ... USING BRIN (created_at);`, LX, TY + 0.35, LW, 2.8, 13, '003 · 004_indexes.sql');
+img(s, 'slide-bench-partition.jpg', LX, TY + 3.3, LW, 1.25);
+label(s, 'KẾT QUẢ TRÊN 1 TRIỆU ĐƠN', RX, TY, 3.4);
+stat(s, '1 / 37', 'partition được quét nhờ pruning\n3,3 ms so với 66 ms (20×)', RX, TY + 0.35, RW, 1.35, RED, 32);
+stat(s, '888 kB', 'BRIN so với 23 MB B-tree\ncùng cột created_at (26×)', RX, TY + 1.85, RW, 1.35, TEAL, 32);
+bullets(s, ['Lưu trữ đơn cũ = DETACH 1 partition', 'Tháng mới: ensure_orders_partition()', 'VACUUM / index chỉ trên partition nhỏ'], RX, TY + 3.4, RW, 1.1, 12);
 
 s = feature(5, 'Transaction + FOR UPDATE – chống bán quá kho');
-img(s, 'order_flow.jpg', X0, 1.5, 3.0, 5.5);
-codeBox(s, `-- place_order(): 1 hàm PL/pgSQL = 1 transaction
-FOR r IN
-  SELECT p.id, p.name, p.stock, i.qty
+problem(s, 'Nhẫn Solitaire còn đúng 1 chiếc, 2 khách bấm “Đặt hàng” cùng lúc. Nếu app chỉ SELECT stock rồi UPDATE, cả hai cùng thấy stock = 1 → bán 2 chiếc.');
+label(s, 'GIẢI PHÁP: 1 HÀM PL/PGSQL = 1 TRANSACTION', LX, TY, 5);
+codeBox(s, `FOR r IN
+  SELECT p.id, p.stock, i.qty
   FROM jsonb_to_recordset(p_items) i
   JOIN products p ON p.id = i.product_id
-  ORDER BY p.id    -- khoá cùng thứ tự, tránh deadlock
-  FOR UPDATE OF p  -- giao dịch 2 phải CHỜ giao dịch 1
+  ORDER BY p.id   -- cùng thứ tự, không deadlock
+  FOR UPDATE OF p -- giao dịch 2 phải CHỜ ở đây
 LOOP
   IF r.stock < r.qty THEN
-    RAISE EXCEPTION 'OUT_OF_STOCK: % chỉ còn %', ...;
+    RAISE EXCEPTION 'OUT_OF_STOCK: %', r.stock;
   END IF;
 END LOOP;
--- INSERT orders, order_items; UPDATE stock;
--- CHECK (stock >= 0) là hàng rào cuối cùng`, 4.0, 1.5, 5.7, 3.55, 12);
-stat(s, '5 / 50', 'client mua được khi kho = 5\n45 client bị OUT_OF_STOCK', 4.0, 5.3, 2.75);
-stat(s, '1.090', 'đơn / giây với 30 client\ntrên CSDL 1 triệu đơn', 6.95, 5.3, 2.75, THEME.colors.accent3);
+-- INSERT orders, order_items; UPDATE stock
+-- CHECK (stock >= 0) là lớp bảo vệ cuối`, LX, TY + 0.35, LW, 3.4, 12, '005_order_transaction.sql');
+s.addShape(pres.ShapeType.rect, { x: LX, y: TY + 3.9, w: LW, h: 0.65, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'flow-bg' });
+T(s, 'Giao dịch 2 chờ giao dịch 1 COMMIT  →  đọc stock đã trừ  →  OUT_OF_STOCK  →  không bao giờ bán quá kho', { x: LX + 0.15, y: TY + 3.9, w: LW - 0.3, h: 0.65, fontSize: 12.5, bold: true, color: BLUE, valign: 'middle' });
+label(s, 'KẾT QUẢ (PGBENCH)', RX, TY, 3.4);
+stat(s, '5 / 50', '50 client cùng mua khi kho = 5\nđúng 5 đơn, 45 bị OUT_OF_STOCK', RX, TY + 0.35, RW, 1.35, GREEN, 32);
+stat(s, '1.090', 'đơn / giây, 30 client đồng thời\ntrên CSDL 1 triệu đơn', RX, TY + 1.85, RW, 1.35, BLUE, 32);
+bullets(s, ['API chỉ gọi SELECT place_order($1,$2)', 'Huỷ đơn: cancel_order() hoàn kho cùng transaction', 'Mọi thay đổi kho ghi vào stock_movements'], RX, TY + 3.4, RW, 1.1, 12);
 
 s = feature(6, 'Materialized view + LISTEN/NOTIFY');
+problem(s, 'Dashboard cần doanh thu 30 ngày, top sản phẩm… tính trên 1,5 triệu dòng chi tiết mỗi lần mở là lãng phí. Admin muốn biết NGAY khi hàng sắp hết, không F5.');
+label(s, 'GIẢI PHÁP', LX, TY, 3);
 codeBox(s, `CREATE MATERIALIZED VIEW mv_sales_daily AS
-SELECT date_trunc('day', created_at)::date AS day,
-       count(*) AS orders, sum(total) AS revenue ...
-CREATE UNIQUE INDEX ON mv_sales_daily (day);
-REFRESH MATERIALIZED VIEW CONCURRENTLY mv_sales_daily;
+SELECT created_at::date AS day,
+       count(*), sum(total) AS revenue
+FROM orders WHERE status <> 'cancelled'
+GROUP BY 1;
+REFRESH MATERIALIZED VIEW CONCURRENTLY
+  mv_sales_daily;   -- không chặn đọc
 
--- Trigger: stock < 3 → pg_notify('low_stock', json)
--- Node.js: LISTEN low_stock → SSE → trình duyệt admin`, X0, 1.55, 5.6, 2.5, 12);
-img(s, '13-admin-notify-sse.jpg', 6.6, 1.55, 3.1, 1.9);
-stat(s, '1.000×', 'doanh thu 30 ngày: 0,018 ms\nso với 19 ms tính trực tiếp', X0, 4.25, 2.7, THEME.colors.accent5);
-stat(s, '< 0,1 s', 'cảnh báo tới admin\nkhông F5, không Redis', X0 + 2.9, 4.25, 2.7, THEME.colors.accent4);
-img(s, '07-admin-dashboard.jpg', 6.6, 3.6, 3.1, 3.4);
-bullets(s, ['REFRESH CONCURRENTLY: không chặn người đọc', 'Số liệu “hôm nay” tính trực tiếp trên partition tháng này'], X0, 5.9, 5.6, 1.1, 13);
+-- Trigger: stock < 3 → pg_notify('low_stock')
+-- Node.js: LISTEN low_stock → SSE → admin`, LX, TY + 0.35, LW, 2.8, 12, '006 · 005 · events.js');
+img(s, 'slide-dashboard.jpg', LX, TY + 3.3, LW, 1.25);
+label(s, 'KẾT QUẢ', RX, TY, 3);
+stat(s, '1.000×', 'doanh thu 30 ngày: 0,018 ms\nso với 19 ms tính trực tiếp', RX, TY + 0.35, RW, 1.35, TEAL, 32);
+stat(s, '< 0,1 s', 'cảnh báo tới admin\nkhông F5, không Redis', RX, TY + 1.85, RW, 1.35, RED, 32);
+img(s, 'slide-notify.jpg', RX, TY + 3.4, RW, 1.15);
 
 // ====================================================================== 13. Index khác
 s = content('Các loại index đặc biệt khác', '6 tính năng');
-table(s, ['Loại', 'Trong hệ thống', 'Lợi ích đo được'], [
-  ['Partial index', { text: 'orders (created_at) WHERE status IN (pending, confirmed)', options: { fontFace: 'Courier New', fontSize: 12 } }, '0,2 ms so với 98 ms trên 1 triệu đơn (480×)'],
-  ['Covering index (INCLUDE)', { text: 'orders (customer_id, created_at) INCLUDE (id, status, total)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Index Only Scan, Heap Fetches = 0; 250×'],
+table(s, ['Loại', 'Trong hệ thống', 'Đo trên 1 triệu đơn'], [
+  ['Partial index', { text: 'orders (created_at)\nWHERE status IN (pending, confirmed)', options: { fontFace: 'Courier New', fontSize: 12 } }, '0,2 ms so với 98 ms (480×)\nindex chỉ 17 MB'],
+  ['Covering index (INCLUDE)', { text: 'orders (customer_id, created_at)\nINCLUDE (id, status, total)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Index Only Scan, Heap Fetches = 0\n0,2 ms so với 52 ms (250×)'],
   ['Expression index', { text: 'customers (lower(email))', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Tìm email không phân biệt hoa thường'],
   ['Generated column', { text: 'total = subtotal + shipping_fee\nsearch_vec = to_tsvector(...)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'CSDL tự tính, app không ghi sai được'],
-  ['GIN / HNSW / BRIN', { text: 'JSONB, tsvector, trigram, vector, thời gian', options: { fontFace: 'Courier New', fontSize: 12 } }, '2,6× – 34× so với quét tuần tự'],
-], X0, 1.65, W0, [2.2, 3.9, 2.8], 14, 0.75);
-T(s, 'Mỗi index gắn với đúng 1 truy vấn của ứng dụng — theo dõi lượt dùng bằng pg_stat_user_indexes', { x: X0, y: 6.3, w: W0, h: 0.5, fontSize: 14, italic: true, color: '444444' });
+], X0, Y0, W0, [2.3, 3.9, 2.7], 13, [0.5, 0.9, 0.9, 0.8, 0.9]);
+s.addShape(pres.ShapeType.rect, { x: X0, y: 5.85, w: W0, h: 1.0, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'note-bg' });
+T(s, 'Mỗi index gắn với đúng 1 truy vấn của ứng dụng. Theo dõi lượt dùng bằng pg_stat_user_indexes: index có idx_scan = 0 lâu ngày là ứng viên để xoá.', { x: X0 + 0.2, y: 5.85, w: W0 - 0.4, h: 1.0, fontSize: 14, color: INK, valign: 'middle' });
 
-// ====================================================================== 14. Demo
+// ====================================================================== 14. Ứng dụng
 pres.addSection({ title: 'Ứng dụng & kết quả' });
 s = content('Ứng dụng: trang bán hàng và trang quản trị', 'Ứng dụng & kết quả');
-img(s, '01-trang-chu.jpg', X0, 1.55, 2.85, 3.6);
-img(s, '02-danh-sach-loc-jsonb.jpg', X0 + 3.02, 1.55, 2.85, 3.6);
-img(s, '09-admin-san-pham-jsonb.jpg', X0 + 6.04, 1.55, 2.86, 3.6);
-T(s, 'Trang chủ  ·  Lọc JSONB  ·  Admin: sửa thuộc tính & nhập kho', { x: X0, y: 5.25, w: W0, h: 0.4, fontSize: 14, align: 'center', color: '444444' });
-bullets(s, ['Demo trực tiếp: tìm kiếm không dấu / sai chính tả, đặt hàng chiếc cuối từ 2 trình duyệt, cảnh báo real-time, trang Monitor & Benchmark chạy EXPLAIN'], X0, 5.8, W0, 1.2, 16);
+img(s, 'slide-home.jpg', X0, Y0, 4.38, 2.3);
+img(s, 'slide-list.jpg', X0 + 4.52, Y0, 4.38, 2.3);
+img(s, 'slide-dashboard.jpg', X0, Y0 + 2.5, 4.38, 2.3);
+img(s, 'slide-monitor.jpg', X0 + 4.52, Y0 + 2.5, 4.38, 2.3);
+T(s, 'Trang chủ  ·  Lọc theo JSONB  ·  Dashboard (matview + NOTIFY)  ·  Monitor & Benchmark (EXPLAIN có/không index)', { x: X0, y: 6.45, w: W0, h: 0.4, fontSize: 13, color: MUTED, align: 'center' });
 
-// ====================================================================== 14b. Demo với DBeaver
+// ====================================================================== 15. Demo DBeaver
 s = content('Demo trực tiếp bằng DBeaver', 'Ứng dụng & kết quả');
-pill(s, 1, 'JSONB: lọc attributes @> {metal, stone} → GIN index', X0, 1.6, W0);
-pill(s, 2, 'Full-text: "nhan kim cuong 18k" · trigram: "nhan kim cuog solitare"', X0, 2.3, W0);
-pill(s, 3, 'pgvector: 8 sản phẩm giống nhẫn NK-001, ORDER BY embedding <=> …', X0, 3.0, W0);
-pill(s, 4, 'Partition: EXPLAIN chỉ quét 1/37 partition; BRIN 888 kB vs B-tree 23 MB', X0, 3.7, W0);
-pill(s, 5, 'place_order() 2 lần trên chiếc cuối → lần 2 báo OUT_OF_STOCK', X0, 4.4, W0);
-pill(s, 6, 'mv_top_products 0,02 ms vs JOIN 1,5 triệu dòng 1,1 s; UPDATE stock → NOTIFY', X0, 5.1, W0);
-T(s, 'Kết nối: localhost:5432 · db jewelry · postgres / postgres  —  mở file, chọn khối lệnh, Cmd+Enter', { x: X0, y: 6.0, w: W0, h: 0.45, fontSize: 14, italic: true, color: '444444' });
-T(s, 'Web: localhost:3000  ·  Admin → Monitor & Benchmark: EXPLAIN có/không index ngay trên giao diện', { x: X0, y: 6.45, w: W0, h: 0.45, fontSize: 14, italic: true, color: '444444' });
+[
+  'JSONB: lọc attributes @> {metal, stone} → GIN index',
+  'Full-text “nhan kim cuong 18k” · trigram “nhan kim cuog solitare”',
+  'pgvector: 8 sản phẩm giống nhẫn NK-001 (ORDER BY embedding <=> …)',
+  'Partition: EXPLAIN chỉ quét 1/37 partition · BRIN 888 kB vs B-tree 23 MB',
+  'place_order() 2 lần trên chiếc cuối → lần 2 báo OUT_OF_STOCK',
+  'Matview 0,02 ms vs JOIN 1,5 triệu dòng 1,1 s · UPDATE stock → NOTIFY',
+].forEach((t, i) => pill(s, i + 1, t, X0, Y0 + i * 0.72, W0, 0.6, 15));
+s.addShape(pres.ShapeType.rect, { x: X0, y: 5.95, w: W0, h: 0.95, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'conn-bg' });
+T(s, [
+  { text: 'Kết nối: ', options: { bold: true } }, { text: 'localhost:5432 · db jewelry · postgres / postgres  —  mở db/demo/demo_queries.sql, chọn khối lệnh, Cmd+Enter', options: { breakLine: true } },
+  { text: 'Web: ', options: { bold: true } }, { text: 'localhost:3000  ·  Admin → Monitor & Benchmark chạy EXPLAIN có/không index ngay trên giao diện' },
+], { x: X0 + 0.2, y: 5.95, w: W0 - 0.4, h: 0.95, fontSize: 13, color: INK, valign: 'middle', fontFace: 'Arial', margin: 0, isTextBox: true });
 
-// ====================================================================== 15. Benchmark
+// ====================================================================== 16. Benchmark
 s = content('Benchmark: có index nhanh hơn bao nhiêu?', 'Ứng dụng & kết quả');
 s.addChart(pres.ChartType.bar, [{
   name: 'Nhanh hơn (lần)',
-  labels: ['Materialized view', 'Partial index', 'Covering index', 'JSONB @> (GIN)', 'Partition pruning', 'Full-text (GIN)', 'pgvector HNSW', 'Trigram'],
-  values: [1077, 484, 251, 34, 20, 9.6, 7.4, 2.6],
+  labels: ['Trigram', 'pgvector HNSW', 'Full-text (GIN)', 'Partition pruning', 'JSONB @> (GIN)', 'Covering index', 'Partial index', 'Materialized view'],
+  values: [2.6, 7.4, 9.6, 20, 34, 251, 484, 1077],
 }], {
-  x: X0, y: 1.5, w: 5.7, h: 5.4, barDir: 'bar',
+  x: X0, y: Y0, w: 5.6, h: 5.4, barDir: 'bar',
   chartColors: [BLUE], showLegend: false,
   showValue: true, dataLabelPosition: 'outEnd', dataLabelFontSize: 12, dataLabelColor: INK, dataLabelFontFace: '+mn-lt', dataLabelFormatCode: '0.#"×"',
   catAxisLabelFontSize: 12, catAxisLabelColor: INK, catAxisLabelFontFace: '+mn-lt', catGridLine: { style: 'none' },
-  valAxisHidden: true, valAxisLogScaleBase: 10, valGridLine: { color: 'E0E0E0', size: 1 }, valAxisLabelFontFace: '+mn-lt', valAxisLabelColor: '666666', valAxisLabelFontSize: 10,
+  valAxisHidden: true, valAxisLogScaleBase: 10, valGridLine: { color: 'E0E0E0', size: 1 }, valAxisLabelFontFace: '+mn-lt', valAxisLabelColor: MUTED, valAxisLabelFontSize: 10,
   showTitle: false, objectName: 'speedup-chart',
 });
-stat(s, '1 triệu', 'đơn hàng / 37 partition\nnpm run seed:big', 6.7, 1.55, 3.0, THEME.colors.accent3);
-stat(s, '1.090', 'đơn hàng / giây\n30 client đồng thời', 6.7, 3.15, 3.0, THEME.colors.accent5);
-bullets(s, ['Tool đo npm run bench: 12 kịch bản × 5 lần, lấy trung vị, xuất Markdown/JSON', 'Giám sát: pg_stat_statements, trang Monitor trong admin'], 6.7, 4.8, 3.0, 2.1, 13);
+stat(s, '1 triệu', 'đơn hàng · 37 partition\nnpm run seed:big', X0 + 5.8, Y0, 3.1, 1.6, GREEN, 32);
+stat(s, '1.090', 'đơn hàng / giây\n30 client đồng thời', X0 + 5.8, Y0 + 1.8, 3.1, 1.6, TEAL, 32);
+s.addShape(pres.ShapeType.roundRect, { x: X0 + 5.8, y: Y0 + 3.6, w: 3.1, h: 1.8, fill: { color: 'FFFFFF' }, line: { color: BLUE, width: 1 }, rectRadius: 0.08, objectName: 'tool' });
+T(s, [
+  { text: 'Công cụ đo: npm run bench', options: { bold: true, color: BLUE, breakLine: true } },
+  { text: '12 kịch bản × 5 lần, lấy trung vị; so sánh bằng SET LOCAL enable_… = off; xuất bench-report.md / .json' },
+], { x: X0 + 5.95, y: Y0 + 3.7, w: 2.8, h: 1.6, fontSize: 12, color: INK, fontFace: 'Arial', margin: 0, isTextBox: true });
 
-// ====================================================================== 16. Kết luận
+// ====================================================================== 17. Kết luận
 pres.addSection({ title: 'Kết luận' });
 s = content('Kết luận', 'Kết luận');
-bullets(s, [
-  'PostgreSQL = CSDL quan hệ + đa mô hình: một hệ thống thay cho search engine, cache, hàng đợi và vector DB',
-  '6 tính năng gắn 6 nghiệp vụ, đo trên 1 triệu đơn: nhanh hơn 2,6× – 1.000×; 50 client đồng thời không bán quá kho',
-  'Hạn chế: embedding feature hashing, chưa có từ điển tiếng Việt, chưa tinh chỉnh tham số PostgreSQL',
-  'Hướng phát triển: embedding CLIP theo ảnh, pg_cron tự tạo partition & refresh, replication',
-], X0, 1.65, W0, 4.2, 18);
-T(s, 'Cảm ơn cô và các bạn đã lắng nghe!', { x: X0, y: 6.0, w: W0, h: 0.8, fontSize: 28, bold: true, color: BLUE, align: 'center', fontFace: 'Trebuchet MS', valign: 'middle' });
+const concl = [
+  ['Một hệ thống thay nhiều hệ thống', 'PostgreSQL = CSDL quan hệ + đa mô hình: thay cho search engine, cache, hàng đợi và vector DB trong phạm vi cửa hàng.', BLUE],
+  ['6 tính năng × 6 nghiệp vụ, đều có số đo', 'Trên 1 triệu đơn: nhanh hơn 2,6× – 1.000×; 50 client đồng thời không bán quá kho.', GREEN],
+  ['Hạn chế', 'Embedding feature hashing; chưa có từ điển tiếng Việt; chưa tinh chỉnh tham số PostgreSQL.', ORANGE],
+  ['Hướng phát triển', 'Embedding CLIP theo ảnh; pg_cron tự tạo partition & refresh; replication đọc/ghi tách biệt.', TEAL],
+];
+concl.forEach(([h, d, c], i) => {
+  const x = X0 + (i % 2) * 4.55, y = Y0 + Math.floor(i / 2) * 2.3;
+  s.addShape(pres.ShapeType.roundRect, { x, y, w: 4.35, h: 2.1, fill: { color: 'FFFFFF' }, line: { color: c, width: 1.5 }, rectRadius: 0.08, objectName: 'c' });
+  s.addShape(pres.ShapeType.rect, { x, y, w: 0.14, h: 2.1, fill: { color: c }, line: { color: c }, objectName: 'c-bar' });
+  T(s, h, { x: x + 0.3, y: y + 0.15, w: 3.95, h: 0.5, fontSize: 16, bold: true, color: c });
+  T(s, d, { x: x + 0.3, y: y + 0.7, w: 3.95, h: 1.3, fontSize: 14, color: INK });
+});
+T(s, 'Cảm ơn cô và các bạn đã lắng nghe!', { x: X0, y: 6.2, w: W0, h: 0.7, fontSize: 24, bold: true, color: BLUE, align: 'center', fontFace: 'Trebuchet MS', valign: 'middle' });
 
 (async () => {
   await pres.writeFile({ fileName: OUT });

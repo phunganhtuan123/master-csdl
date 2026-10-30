@@ -25,8 +25,10 @@ db/demo/            demo_queries.sql — câu lệnh demo mở trong DBeaver
 db/benchmark/       pgbench: đặt hàng đồng thời, kiểm chứng chống bán quá kho
 api/                Node.js + Fastify + pg  (port 4000)
 web/                Next.js — trang bán hàng (/) và quản trị (/admin)  (port 3000)
-docs/               tiểu luận, slide, screenshots
+docs/               tiểu luận (.docx/.pdf), slide (.pptx/.pdf), docs/build mã sinh tài liệu, docs/img ảnh, docs/benchmark kết quả đo
 ```
+
+Tổng hợp mọi lệnh (deploy, seed 1 triệu, benchmark, demo SQL, vận hành): **[COMMANDS.md](COMMANDS.md)**
 
 ## Chạy trên máy cá nhân (chỉ cần Docker Desktop)
 
