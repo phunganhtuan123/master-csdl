@@ -257,6 +257,17 @@ img(s, '09-admin-san-pham-jsonb.jpg', X0 + 6.04, 1.55, 2.86, 3.6);
 T(s, 'Trang chủ  ·  Lọc JSONB  ·  Admin: sửa thuộc tính & nhập kho', { x: X0, y: 5.25, w: W0, h: 0.4, fontSize: 14, align: 'center', color: '444444' });
 bullets(s, ['Demo trực tiếp: tìm kiếm không dấu / sai chính tả, đặt hàng chiếc cuối từ 2 trình duyệt, cảnh báo real-time, trang Monitor & Benchmark chạy EXPLAIN'], X0, 5.8, W0, 1.2, 16);
 
+// ====================================================================== 14b. Demo với DBeaver
+s = content('Demo trực tiếp bằng DBeaver', 'Ứng dụng & kết quả');
+pill(s, 1, 'JSONB: lọc attributes @> {metal, stone} → GIN index', X0, 1.6, W0);
+pill(s, 2, 'Full-text: "nhan kim cuong 18k" · trigram: "nhan kim cuog solitare"', X0, 2.3, W0);
+pill(s, 3, 'pgvector: 8 sản phẩm giống nhẫn NK-001, ORDER BY embedding <=> …', X0, 3.0, W0);
+pill(s, 4, 'Partition: EXPLAIN chỉ quét 1/37 partition; BRIN 888 kB vs B-tree 23 MB', X0, 3.7, W0);
+pill(s, 5, 'place_order() 2 lần trên chiếc cuối → lần 2 báo OUT_OF_STOCK', X0, 4.4, W0);
+pill(s, 6, 'mv_top_products 0,02 ms vs JOIN 1,5 triệu dòng 1,1 s; UPDATE stock → NOTIFY', X0, 5.1, W0);
+T(s, 'Kết nối: localhost:5432 · db jewelry · postgres / postgres  —  mở file, chọn khối lệnh, Cmd+Enter', { x: X0, y: 6.0, w: W0, h: 0.45, fontSize: 14, italic: true, color: '444444' });
+T(s, 'Web: localhost:3000  ·  Admin → Monitor & Benchmark: EXPLAIN có/không index ngay trên giao diện', { x: X0, y: 6.45, w: W0, h: 0.45, fontSize: 14, italic: true, color: '444444' });
+
 // ====================================================================== 15. Benchmark
 s = content('Benchmark: có index nhanh hơn bao nhiêu?', 'Ứng dụng & kết quả');
 s.addChart(pres.ChartType.bar, [{
