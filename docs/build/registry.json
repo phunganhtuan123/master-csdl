@@ -1,0 +1,416 @@
+{
+ "headings": [
+  {
+   "level": 1,
+   "text": "DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT"
+  },
+  {
+   "level": 1,
+   "text": "TÓM TẮT"
+  },
+  {
+   "level": 1,
+   "text": "LỜI MỞ ĐẦU"
+  },
+  {
+   "level": 2,
+   "text": "1. Lý do chọn đề tài"
+  },
+  {
+   "level": 2,
+   "text": "2. Mục tiêu của đề tài"
+  },
+  {
+   "level": 2,
+   "text": "3. Đối tượng và phạm vi nghiên cứu"
+  },
+  {
+   "level": 2,
+   "text": "4. Phương pháp thực hiện"
+  },
+  {
+   "level": 2,
+   "text": "5. Bố cục tiểu luận"
+  },
+  {
+   "level": 1,
+   "text": "CHƯƠNG 1. TỔNG QUAN VỀ POSTGRESQL"
+  },
+  {
+   "level": 2,
+   "text": "1.1. Lịch sử và giấy phép"
+  },
+  {
+   "level": 2,
+   "text": "1.2. Vị trí trên thị trường"
+  },
+  {
+   "level": 2,
+   "text": "1.3. Hệ sinh thái tính năng và extension"
+  },
+  {
+   "level": 2,
+   "text": "1.4. Lý do lựa chọn PostgreSQL cho hệ thống bán hàng trang sức"
+  },
+  {
+   "level": 1,
+   "text": "CHƯƠNG 2. PHÂN TÍCH NGHIỆP VỤ VÀ THIẾT KẾ CƠ SỞ DỮ LIỆU"
+  },
+  {
+   "level": 2,
+   "text": "2.1. Mô tả nghiệp vụ"
+  },
+  {
+   "level": 2,
+   "text": "2.2. Sơ đồ thực thể – quan hệ (ERD)"
+  },
+  {
+   "level": 2,
+   "text": "2.3. Mô tả chi tiết các bảng"
+  },
+  {
+   "level": 3,
+   "text": "2.3.1. Bảng products – sản phẩm"
+  },
+  {
+   "level": 3,
+   "text": "2.3.2. Bảng orders – đơn hàng (phân vùng theo tháng)"
+  },
+  {
+   "level": 3,
+   "text": "2.3.3. Bảng order_items – chi tiết đơn hàng"
+  },
+  {
+   "level": 3,
+   "text": "2.3.4. Các bảng còn lại"
+  },
+  {
+   "level": 2,
+   "text": "2.4. Ràng buộc toàn vẹn và trigger"
+  },
+  {
+   "level": 2,
+   "text": "2.5. Tổ chức migration"
+  },
+  {
+   "level": 1,
+   "text": "CHƯƠNG 3. CÁC TÍNH NĂNG NỔI BẬT CỦA POSTGRESQL ÁP DỤNG TRONG HỆ THỐNG"
+  },
+  {
+   "level": 2,
+   "text": "3.1. JSONB – thuộc tính sản phẩm linh hoạt"
+  },
+  {
+   "level": 3,
+   "text": "3.1.1. Bài toán"
+  },
+  {
+   "level": 3,
+   "text": "3.1.2. Giải pháp PostgreSQL"
+  },
+  {
+   "level": 3,
+   "text": "3.1.3. Kết quả"
+  },
+  {
+   "level": 2,
+   "text": "3.2. Full-text search tiếng Việt với unaccent, tsvector và pg_trgm"
+  },
+  {
+   "level": 3,
+   "text": "3.2.1. Bài toán"
+  },
+  {
+   "level": 3,
+   "text": "3.2.2. Giải pháp PostgreSQL"
+  },
+  {
+   "level": 3,
+   "text": "3.2.3. Kết quả"
+  },
+  {
+   "level": 2,
+   "text": "3.3. pgvector – gợi ý sản phẩm tương tự"
+  },
+  {
+   "level": 3,
+   "text": "3.3.1. Bài toán"
+  },
+  {
+   "level": 3,
+   "text": "3.3.2. Giải pháp PostgreSQL"
+  },
+  {
+   "level": 3,
+   "text": "3.3.3. Kết quả"
+  },
+  {
+   "level": 2,
+   "text": "3.4. Table partitioning và BRIN index cho bảng đơn hàng"
+  },
+  {
+   "level": 3,
+   "text": "3.4.1. Bài toán"
+  },
+  {
+   "level": 3,
+   "text": "3.4.2. Giải pháp PostgreSQL"
+  },
+  {
+   "level": 3,
+   "text": "3.4.3. Kết quả"
+  },
+  {
+   "level": 2,
+   "text": "3.5. Transaction và SELECT … FOR UPDATE – chống bán quá tồn kho"
+  },
+  {
+   "level": 3,
+   "text": "3.5.1. Bài toán"
+  },
+  {
+   "level": 3,
+   "text": "3.5.2. Giải pháp PostgreSQL"
+  },
+  {
+   "level": 3,
+   "text": "3.5.3. Kết quả"
+  },
+  {
+   "level": 2,
+   "text": "3.6. Materialized view và LISTEN/NOTIFY cho dashboard quản trị"
+  },
+  {
+   "level": 3,
+   "text": "3.6.1. Bài toán"
+  },
+  {
+   "level": 3,
+   "text": "3.6.2. Giải pháp PostgreSQL"
+  },
+  {
+   "level": 3,
+   "text": "3.6.3. Kết quả"
+  },
+  {
+   "level": 2,
+   "text": "3.7. Hệ thống chỉ mục và các loại index đặc biệt"
+  },
+  {
+   "level": 1,
+   "text": "CHƯƠNG 4. XÂY DỰNG ỨNG DỤNG"
+  },
+  {
+   "level": 2,
+   "text": "4.1. Kiến trúc tổng thể"
+  },
+  {
+   "level": 2,
+   "text": "4.2. Backend: SQL thuần với Node.js"
+  },
+  {
+   "level": 3,
+   "text": "4.2.1. Lớp truy cập dữ liệu"
+  },
+  {
+   "level": 3,
+   "text": "4.2.2. Trình chạy migration"
+  },
+  {
+   "level": 3,
+   "text": "4.2.3. Các nhóm API"
+  },
+  {
+   "level": 2,
+   "text": "4.3. Frontend Next.js"
+  },
+  {
+   "level": 2,
+   "text": "4.4. Giao diện khách hàng"
+  },
+  {
+   "level": 2,
+   "text": "4.5. Giao diện quản trị"
+  },
+  {
+   "level": 2,
+   "text": "4.6. Triển khai bằng Docker Compose"
+  },
+  {
+   "level": 1,
+   "text": "CHƯƠNG 5. KIỂM THỬ, BENCHMARK VÀ GIÁM SÁT"
+  },
+  {
+   "level": 2,
+   "text": "5.1. Dữ liệu thử nghiệm: 1 triệu đơn hàng"
+  },
+  {
+   "level": 2,
+   "text": "5.2. Công cụ đo: bench.js"
+  },
+  {
+   "level": 2,
+   "text": "5.3. Kết quả: có và không có index trên 1 triệu đơn hàng"
+  },
+  {
+   "level": 2,
+   "text": "5.4. Kiểm chứng chống bán quá tồn kho"
+  },
+  {
+   "level": 2,
+   "text": "5.5. Thông lượng với pgbench"
+  },
+  {
+   "level": 2,
+   "text": "5.6. Giám sát"
+  },
+  {
+   "level": 1,
+   "text": "KẾT LUẬN"
+  },
+  {
+   "level": 2,
+   "text": "1. Kết quả đạt được"
+  },
+  {
+   "level": 2,
+   "text": "2. Hạn chế"
+  },
+  {
+   "level": 2,
+   "text": "3. Hướng phát triển"
+  },
+  {
+   "level": 1,
+   "text": "TÀI LIỆU THAM KHẢO"
+  },
+  {
+   "level": 1,
+   "text": "PHỤ LỤC"
+  },
+  {
+   "level": 2,
+   "text": "Phụ lục A. Cài đặt và chạy trên máy cá nhân"
+  },
+  {
+   "level": 2,
+   "text": "Phụ lục B. Kết nối DBeaver và các câu lệnh demo"
+  },
+  {
+   "level": 2,
+   "text": "Phụ lục C. Cấu trúc mã nguồn"
+  }
+ ],
+ "figures": [
+  {
+   "label": "Hình 1",
+   "text": "Sơ đồ thực thể – quan hệ của hệ thống"
+  },
+  {
+   "label": "Hình 2",
+   "text": "Gõ sai chính tả – hệ thống tự chuyển sang tìm gần đúng bằng trigram"
+  },
+  {
+   "label": "Hình 3",
+   "text": "Trang chi tiết sản phẩm với khối “Có thể bạn cũng thích” từ pgvector"
+  },
+  {
+   "label": "Hình 4",
+   "text": "Partition pruning: chỉ quét 1 partition (trái) so với Append toàn bộ partition (phải)"
+  },
+  {
+   "label": "Hình 5",
+   "text": "Luồng xử lý trong hàm place_order()"
+  },
+  {
+   "label": "Hình 6",
+   "text": "Thông báo “Sắp hết hàng” đẩy từ PostgreSQL (pg_notify) sang trình duyệt quản trị"
+  },
+  {
+   "label": "Hình 7",
+   "text": "Kiến trúc triển khai của hệ thống"
+  },
+  {
+   "label": "Hình 8",
+   "text": "Danh sách sản phẩm lọc theo danh mục Nhẫn và chất liệu Vàng 18K (JSONB)"
+  },
+  {
+   "label": "Hình 9",
+   "text": "Giỏ hàng và biểu mẫu đặt hàng"
+  },
+  {
+   "label": "Hình 10",
+   "text": "Dashboard quản trị (dữ liệu từ materialized view)"
+  },
+  {
+   "label": "Hình 11",
+   "text": "Màn hình sửa sản phẩm – thêm/xoá thuộc tính JSONB và nhập kho"
+  },
+  {
+   "label": "Hình 12",
+   "text": "Thống kê câu SQL từ pg_stat_statements trên trang quản trị"
+  }
+ ],
+ "tables": [
+  {
+   "label": "Bảng 1",
+   "text": "Danh mục thuật ngữ và từ viết tắt"
+  },
+  {
+   "label": "Bảng 2",
+   "text": "Top 5 hệ quản trị CSDL theo DB-Engines (2026) [1]"
+  },
+  {
+   "label": "Bảng 3",
+   "text": "So sánh PostgreSQL với MySQL và MongoDB ở các nhu cầu của đề tài"
+  },
+  {
+   "label": "Bảng 4",
+   "text": "Danh sách chức năng và yêu cầu dữ liệu"
+  },
+  {
+   "label": "Bảng 5",
+   "text": "Cấu trúc bảng products"
+  },
+  {
+   "label": "Bảng 6",
+   "text": "Cấu trúc bảng orders"
+  },
+  {
+   "label": "Bảng 7",
+   "text": "Cấu trúc bảng order_items"
+  },
+  {
+   "label": "Bảng 8",
+   "text": "Các bảng phụ trợ"
+  },
+  {
+   "label": "Bảng 9",
+   "text": "Các file migration"
+  },
+  {
+   "label": "Bảng 10",
+   "text": "Các index và cột sinh tự động khác trong hệ thống"
+  },
+  {
+   "label": "Bảng 11",
+   "text": "Công nghệ sử dụng"
+  },
+  {
+   "label": "Bảng 12",
+   "text": "Môi trường và dữ liệu thử nghiệm"
+  },
+  {
+   "label": "Bảng 13",
+   "text": "Thời gian thực thi có và không có index (trung vị 5 lần, 1.035.853 đơn hàng)"
+  },
+  {
+   "label": "Bảng 14",
+   "text": "Kích thước các index trên bảng orders và products"
+  },
+  {
+   "label": "Bảng 15",
+   "text": "Kết quả pgbench (máy ảo 2 vCPU, cấu hình PostgreSQL mặc định)"
+  }
+ ]
+}

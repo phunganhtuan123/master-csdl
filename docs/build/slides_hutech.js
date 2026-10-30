@@ -143,100 +143,14 @@ map.forEach(([a, b], i) => {
   T(s, b, { x: X0 + 5.7, y: y + 0.08, w: 3.1, h: 0.6, fontSize: 14, bold: true, color: BLUE, valign: 'middle' });
 });
 
-// ====================================================================== 5. Kiến trúc (vẽ bằng shape)
+// ====================================================================== 5. Kiến trúc (ảnh docs/diagrams/architecture.html → img/architecture.jpg)
 pres.addSection({ title: 'Thiết kế' });
 s = content('Kiến trúc hệ thống', 2);
-const box = (x, y, w, h, head, lines, c, fs = 11) => {
-  s.addShape(pres.ShapeType.roundRect, { x, y, w, h, fill: { color: 'FFFFFF' }, line: { color: c, width: 1.5 }, rectRadius: 0.06, shadow: { type: 'outer', blur: 3, offset: 1.5, angle: 45, color: '000000', opacity: 0.15 }, objectName: 'box' });
-  s.addShape(pres.ShapeType.roundRect, { x, y, w, h: 0.42, fill: { color: c }, line: { color: c }, rectRadius: 0.06, objectName: 'box-h' });
-  s.addShape(pres.ShapeType.rect, { x, y: y + 0.2, w, h: 0.22, fill: { color: c }, line: { color: c }, objectName: 'box-h2' });
-  T(s, head, { x: x + 0.1, y, w: w - 0.2, h: 0.42, fontSize: 12.5, bold: true, color: 'FFFFFF', valign: 'middle', align: 'center' });
-  if (lines.length) T(s, lines.map((l, i) => ({ text: l, options: { breakLine: i < lines.length - 1 } })), { x: x + 0.12, y: y + 0.48, w: w - 0.24, h: h - 0.52, fontSize: fs, color: INK, valign: 'top' });
-};
-const arrow = (x1, y1, x2, y2, lbl = null, dash = false, c = MUTED) => {
-  const o = { x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1), line: { color: c, width: 1.5, endArrowType: 'triangle', dashType: dash ? 'dash' : 'solid' }, objectName: 'arrow' };
-  if (x2 < x1) o.flipH = true; if (y2 < y1) o.flipV = true;
-  s.addShape(pres.ShapeType.line, o);
-  if (lbl) T(s, lbl, { x: Math.min(x1, x2) - 0.3, y: Math.min(y1, y2) - 0.26, w: Math.abs(x2 - x1) + 0.6, h: 0.24, fontSize: 9.5, color: c, align: 'center', italic: true });
-};
-const tag = (x, y, w, t) => T(s, t, { x, y, w, h: 0.22, fontSize: 9, color: MUTED, align: 'center' });
-// Hàng chính
-tag(0.8, 1.55, 1.7, 'TRÌNH DUYỆT');
-box(0.8, 1.8, 1.7, 1.0, 'Khách hàng', ['/  trang bán hàng', 'tìm kiếm · giỏ hàng'], ORANGE, 10);
-box(0.8, 3.05, 1.7, 1.0, 'Quản trị', ['/admin  (JWT)', 'dashboard · kho · monitor'], ORANGE, 10);
-tag(3.0, 1.55, 1.95, 'CONTAINER  web  :3000');
-box(3.0, 1.8, 1.95, 2.25, 'Next.js 15', ['• SSR trang bán hàng', '• Client components', '   cho trang quản trị', '• EventSource nhận SSE'], GREEN, 10);
-tag(5.35, 1.55, 1.95, 'CONTAINER  api  :4000');
-box(5.35, 1.8, 1.95, 2.25, 'Node.js + Fastify', ['• SQL thuần: pg', '   pool.query($1, $2)', '• migrate · seed · bench', '• LISTEN low_stock,', '   new_order → SSE'], TEAL, 10);
-tag(7.7, 1.55, 2.0, 'CONTAINER  db  :5432');
-box(7.7, 1.8, 2.0, 3.1, 'PostgreSQL 16', ['• 8 bảng, orders chia 37', '   partition theo tháng', '• JSONB · tsvector · vector', '• place_order() · trigger', '• matview · NOTIFY', '', 'Extension: pgvector,', 'pg_trgm, unaccent,', 'pg_stat_statements'], BLUE, 10);
-arrow(2.5, 2.3, 3.0, 2.3, 'HTTP');
-arrow(2.5, 3.55, 3.0, 3.55, 'HTTP');
-arrow(4.95, 2.4, 5.35, 2.4, 'REST');
-arrow(7.3, 2.4, 7.7, 2.4, 'SQL');
-arrow(7.7, 3.4, 7.3, 3.4, 'NOTIFY', true, RED);
-// SSE: api → admin (đi vòng dưới)
-s.addShape(pres.ShapeType.line, { x: 6.32, y: 4.05, w: 0, h: 0.45, line: { color: RED, width: 1.5, dashType: 'dash' }, objectName: 'sse1' });
-s.addShape(pres.ShapeType.line, { x: 1.65, y: 4.5, w: 4.67, h: 0, line: { color: RED, width: 1.5, dashType: 'dash' }, objectName: 'sse2' });
-s.addShape(pres.ShapeType.line, { x: 1.65, y: 4.05, w: 0, h: 0.45, line: { color: RED, width: 1.5, dashType: 'dash', endArrowType: 'triangle' }, flipV: true, objectName: 'sse3' });
-T(s, 'SSE – cảnh báo sắp hết hàng tới trình duyệt admin < 0,1 s, không F5', { x: 1.9, y: 4.52, w: 4.4, h: 0.24, fontSize: 9.5, italic: true, color: RED, align: 'center' });
-// Hàng công cụ (kết nối thẳng PostgreSQL)
-T(s, 'CÔNG CỤ DEMO & ĐO', { x: 0.8, y: 5.1, w: 1.4, h: 0.22, fontSize: 8.5, color: MUTED });
-box(0.8, 5.5, 2.75, 1.3, 'DBeaver / psql', ['db/demo/demo_queries.sql', '8 mục demo, EXPLAIN dạng hình'], MUTED, 10);
-box(3.85, 5.5, 2.75, 1.3, 'npm run bench · pgbench', ['12 kịch bản có/không index', '50 client mua cùng lúc'], MUTED, 10);
-box(6.9, 5.5, 2.8, 1.3, 'Monitor & Benchmark', ['/admin/monitor: EXPLAIN ANALYZE,', 'pg_stat_statements, index size'], MUTED, 10);
-s.addShape(pres.ShapeType.line, { x: 2.17, y: 5.25, w: 6.53, h: 0, line: { color: MUTED, width: 1.2 }, objectName: 'bus' });
-[2.17, 5.22].forEach((x) => s.addShape(pres.ShapeType.line, { x, y: 5.25, w: 0, h: 0.25, line: { color: MUTED, width: 1.2 }, objectName: 'bus-v' }));
-s.addShape(pres.ShapeType.line, { x: 8.7, y: 4.9, w: 0, h: 0.35, line: { color: MUTED, width: 1.2, endArrowType: 'triangle' }, flipV: true, objectName: 'bus-up' });
-T(s, 'kết nối thẳng PostgreSQL :5432', { x: 6.0, y: 5.0, w: 2.6, h: 0.22, fontSize: 9, italic: true, color: MUTED, align: 'right' });
+img(s, 'architecture.jpg', X0, 1.7, W0, W0 / 1.877, false);
 
-// ====================================================================== 6. ERD (vẽ bằng shape)
+// ====================================================================== 6. ERD (ảnh docs/diagrams/erd.html → img/erd.jpg, kiểu DBeaver)
 s = content('Thiết kế CSDL: 8 bảng', 3);
-const RH = 0.26;
-/** Thẻ bảng: rows = [text] hoặc [text, true] (dòng nổi bật) */
-const tbl = (x, y, w, name, rows, c, sub = null) => {
-  const h = 0.32 + rows.length * RH;
-  s.addShape(pres.ShapeType.rect, { x, y, w, h, fill: { color: 'FFFFFF' }, line: { color: c, width: 1.2 }, shadow: { type: 'outer', blur: 3, offset: 1.5, angle: 45, color: '000000', opacity: 0.15 }, objectName: 'tbl' });
-  s.addShape(pres.ShapeType.rect, { x, y, w, h: 0.32, fill: { color: c }, line: { color: c }, objectName: 'tbl-h' });
-  T(s, [{ text: name, options: { bold: true } }, ...(sub ? [{ text: '  ' + sub, options: { fontSize: 8.5 } }] : [])], { x: x + 0.08, y, w: w - 0.16, h: 0.32, fontSize: 11.5, color: 'FFFFFF', valign: 'middle' });
-  rows.forEach((r, i) => {
-    const [t, hi] = Array.isArray(r) ? r : [r, false];
-    if (hi) s.addShape(pres.ShapeType.rect, { x: x + 0.02, y: y + 0.32 + i * RH, w: w - 0.04, h: RH, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'tbl-hi' });
-    T(s, t, { x: x + 0.08, y: y + 0.32 + i * RH, w: w - 0.16, h: RH, fontSize: 10, color: hi ? BLUE : INK, bold: hi, valign: 'middle', fontFace: 'Arial' });
-  });
-  return h;
-};
-const rel = (x1, y1, x2, y2, lbl = '1 : n') => {
-  s.addShape(pres.ShapeType.line, { x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1), line: { color: MUTED, width: 1.2 }, flipH: x2 < x1, flipV: y2 < y1, objectName: 'rel' });
-  s.addShape(pres.ShapeType.ellipse, { x: x1 - 0.05, y: y1 - 0.05, w: 0.1, h: 0.1, fill: { color: MUTED }, line: { color: MUTED }, objectName: 'rel-1' });
-  if (x1 === x2) T(s, lbl, { x: x1 + 0.06, y: (y1 + y2) / 2 - 0.1, w: 0.5, h: 0.2, fontSize: 8, color: MUTED });
-  else T(s, lbl, { x: (x1 + x2) / 2 - 0.35, y: (y1 + y2) / 2 - 0.24, w: 0.7, h: 0.2, fontSize: 8, color: MUTED, align: 'center' });
-};
-const GOLD = 'B8902E';
-// cột trái
-tbl(0.8, 1.55, 1.95, 'categories', ['id  PK', 'slug  UQ', 'name', 'parent_id  FK (cha–con)'], GOLD);
-tbl(0.8, 3.55, 1.95, 'product_images', ['id  PK', 'product_id  FK', 'url', 'sort_order'], GOLD);
-tbl(0.8, 5.3, 1.95, 'admins', ['id  PK', 'username  UQ', 'password_hash'], MUTED);
-// cột giữa: products + stock_movements
-tbl(3.1, 1.55, 2.5, 'products', ['id  PK', 'sku  UQ  ·  slug  UQ', 'name  ·  description', 'category_id  FK', 'price  ·  stock  CHECK ≥ 0', ['attributes   JSONB  + GIN', true], ['embedding   vector(256)  + HNSW', true], ['search_vec   tsvector  (generated)', true], 'image_url  ·  status', 'created_at  ·  updated_at'], BLUE);
-tbl(3.1, 4.75, 2.5, 'stock_movements', ['id  PK', 'product_id  FK', 'delta  ·  reason  ·  ref_id', 'created_at'], GREEN);
-// cột phải: customers, orders, order_items
-tbl(7.6, 1.55, 2.1, 'customers', ['id  PK', 'full_name', 'phone  UQ', 'email  ·  address'], TEAL);
-tbl(7.6, 3.3, 2.1, 'orders', [['id · created_at   PK', true], ['PARTITION theo tháng (37)', true], 'customer_id  FK', 'status  CHECK', 'subtotal  ·  shipping_fee', ['total  (generated)', true], 'note'], TEAL);
-tbl(5.8, 3.6, 1.75, 'order_items', ['id  PK', 'order_id · created_at  FK', 'product_id  FK', 'qty  ·  unit_price', ['line_total  (generated)', true]], TEAL);
-// quan hệ
-rel(2.75, 2.1, 3.1, 2.1);                 // categories → products
-rel(3.1, 4.1, 2.75, 4.1);                 // products → product_images
-rel(4.35, 4.47, 4.35, 4.75);              // products → stock_movements
-rel(5.6, 4.2, 5.8, 4.2);                  // products → order_items
-rel(8.65, 2.91, 8.65, 3.3);               // customers → orders
-rel(7.6, 4.6, 7.55, 4.6);                 // orders → order_items
-// ghi chú dưới
-s.addShape(pres.ShapeType.rect, { x: 5.8, y: 5.7, w: 3.9, h: 1.15, fill: { color: LIGHT }, line: { color: LIGHT }, objectName: 'erd-note' });
-T(s, [
-  { text: 'Ngoài 8 bảng: ', options: { bold: true, color: BLUE } }, { text: '37 partition orders_YYYY_MM · 2 materialized view mv_sales_daily, mv_top_products · hàm place_order(), cancel_order() · trigger notify_low_stock, notify_new_order', options: { breakLine: true } },
-  { text: 'Nền xanh', options: { bold: true, color: BLUE } }, { text: ' = cột dùng tính năng PostgreSQL nổi bật' },
-], { x: 5.9, y: 5.72, w: 3.7, h: 1.1, fontSize: 9.5, color: INK, fontFace: 'Arial', margin: 0, isTextBox: true, valign: 'middle' });
+img(s, 'erd.jpg', X0 + 0.1, 1.5, W0 - 0.2, (W0 - 0.2) / 1.698, false);
 
 // ====================================================================== 13. Index khác
 s = content('Thiết kế CSDL: các loại index đặc biệt', 3);

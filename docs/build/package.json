@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "image-size": "^2.0.4"
+    "image-size": "^2.0.4",
+    "simple-icons": "^13.0.0"
   }
 }

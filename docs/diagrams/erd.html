@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; color: #222; }
+  #c { position: relative; width: 1800px; height: 1060px; background: #fff; overflow: hidden;
+       background-image: radial-gradient(#e4e4e4 1px, transparent 1px); background-size: 20px 20px; }
+  .t { position: absolute; background: #fff; border: 1px solid #8fa3c4; border-radius: 4px; box-shadow: 0 4px 14px rgba(20,40,90,.14); font-size: 14px; }
+  .t .h { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: linear-gradient(#eef3fb, #d9e4f5); border-bottom: 1px solid #8fa3c4; border-radius: 4px 4px 0 0; font-weight: 700; font-size: 15px; color: #1b2c4f; }
+  .t .h svg { width: 16px; height: 16px; flex: none; }
+  .t .h .sub { margin-left: auto; font-weight: 400; font-size: 11.5px; color: #4a5b80; font-family: Menlo, Consolas, monospace; }
+  .r { height: 26px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-top: 1px solid #f1f1f1; white-space: nowrap; }
+  .r:first-of-type { border-top: 0; }
+  .r .ic { width: 14px; height: 14px; flex: none; }
+  .r .n { color: #222; }
+  .r .ty { margin-left: auto; color: #7a7a7a; font-family: Menlo, Consolas, monospace; font-size: 12.5px; }
+  .r.pk .n { font-weight: 700; }
+  .r.hi { background: #fff6dc; }
+  .r.hi .n { font-weight: 700; color: #7a4d00; }
+  .tag { font-size: 10.5px; padding: 1px 6px; border-radius: 3px; background: #2A10B4; color: #fff; font-weight: 700; margin-left: 6px; }
+  .note { position: absolute; border: 1.5px dashed #9aa8c4; border-radius: 6px; background: #fafbff; padding: 10px 14px; font-size: 13px; color: #334; line-height: 1.5; }
+  .note b { color: #1b2c4f; }
+  svg.l { position: absolute; inset: 0; width: 1800px; height: 1060px; pointer-events: none; }
+  .legend { position: absolute; left: 60px; top: 960px; display: flex; gap: 28px; align-items: center; font-size: 13.5px; color: #333; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+</style></head>
+<body><div id="c">
+
+<svg style="position:absolute;width:0;height:0">
+  <defs>
+    <g id="tbl"><rect x="1" y="2" width="14" height="12" rx="1.5" fill="#fff" stroke="#3b5a9a" stroke-width="1.3"/><path d="M1 6h14M6 6v8" stroke="#3b5a9a" stroke-width="1.3"/></g>
+    <g id="pk"><path d="M8 1.5a3.2 3.2 0 1 0 1.6 6L13 11l1.5 1.5-1 1-1.5-1.5-1 1L12.5 14l-1.3 0-1.2-1.2L9 11.8 8.3 11 6.8 9.5A3.2 3.2 0 0 0 8 1.5z" fill="#e0a800" stroke="#9a7200" stroke-width=".8"/></g>
+    <g id="fk"><path d="M8 1.5a3.2 3.2 0 1 0 1.6 6L13 11l1.5 1.5-1 1-1.5-1.5-1 1L12.5 14l-1.3 0-1.2-1.2L9 11.8 8.3 11 6.8 9.5A3.2 3.2 0 0 0 8 1.5z" fill="#9fb6e3" stroke="#3b5a9a" stroke-width=".8"/></g>
+    <g id="col"><rect x="2" y="2" width="10" height="10" rx="2" fill="#d7dde8" stroke="#8d99b3" stroke-width="1"/></g>
+    <g id="req"><rect x="2" y="2" width="10" height="10" rx="2" fill="#8fa3c4" stroke="#56688c" stroke-width="1"/></g>
+  </defs>
+</svg>
+
+<!-- categories -->
+<div class="t" style="left:60px;top:80px;width:300px">
+  <div class="h"><svg><use href="#tbl"/></svg>categories</div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">serial</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">slug</span><span class="ty">text · UQ</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">name</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">parent_id</span><span class="ty">int4 → categories</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">created_at</span><span class="ty">timestamptz</span></div>
+</div>
+
+<!-- products -->
+<div class="t" style="left:480px;top:60px;width:400px">
+  <div class="h"><svg><use href="#tbl"/></svg>products<span class="sub">3.033 dòng</span></div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">bigserial</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">sku</span><span class="ty">text · UQ</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">slug</span><span class="ty">text · UQ</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">name</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">category_id</span><span class="ty">int4 → categories</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">price</span><span class="ty">numeric(14,0) · CHECK ≥ 0</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">stock</span><span class="ty">int4 · CHECK ≥ 0</span></div>
+  <div class="r hi"><svg class="ic"><use href="#req"/></svg><span class="n">attributes</span><span class="tag">GIN</span><span class="ty">jsonb</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">description</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">image_url</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">status</span><span class="ty">text · CHECK</span></div>
+  <div class="r hi"><svg class="ic"><use href="#col"/></svg><span class="n">embedding</span><span class="tag">HNSW</span><span class="ty">vector(256)</span></div>
+  <div class="r hi"><svg class="ic"><use href="#req"/></svg><span class="n">search_vec</span><span class="tag">GIN</span><span class="ty">tsvector · generated</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">created_at</span><span class="ty">timestamptz</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">updated_at</span><span class="ty">timestamptz · trigger</span></div>
+</div>
+
+<!-- customers -->
+<div class="t" style="left:1360px;top:80px;width:340px">
+  <div class="h"><svg><use href="#tbl"/></svg>customers<span class="sub">500 dòng</span></div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">bigserial</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">full_name</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">phone</span><span class="ty">text · UQ</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">email</span><span class="ty">text · expression idx</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">address</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">created_at</span><span class="ty">timestamptz</span></div>
+</div>
+
+<!-- product_images -->
+<div class="t" style="left:60px;top:420px;width:300px">
+  <div class="h"><svg><use href="#tbl"/></svg>product_images</div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">bigserial</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">product_id</span><span class="ty">int8 → products</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">url</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">sort_order</span><span class="ty">int4</span></div>
+</div>
+
+<!-- admins -->
+<div class="t" style="left:60px;top:680px;width:300px">
+  <div class="h"><svg><use href="#tbl"/></svg>admins</div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">serial</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">username</span><span class="ty">text · UQ</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">password_hash</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">full_name</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">created_at</span><span class="ty">timestamptz</span></div>
+</div>
+
+<!-- stock_movements -->
+<div class="t" style="left:480px;top:700px;width:400px">
+  <div class="h"><svg><use href="#tbl"/></svg>stock_movements</div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">bigserial</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">product_id</span><span class="ty">int8 → products</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">delta</span><span class="ty">int4 (âm = xuất, dương = nhập)</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">reason</span><span class="ty">text</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">ref_id</span><span class="ty">int8</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">created_at</span><span class="ty">timestamptz</span></div>
+</div>
+
+<!-- order_items -->
+<div class="t" style="left:960px;top:560px;width:340px">
+  <div class="h"><svg><use href="#tbl"/></svg>order_items<span class="sub">1,5 triệu dòng</span></div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">bigserial</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">order_id</span><span class="ty">int8 → orders</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">order_created_at</span><span class="ty">timestamptz → orders</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">product_id</span><span class="ty">int8 → products</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">qty</span><span class="ty">int4 · CHECK &gt; 0</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">unit_price</span><span class="ty">numeric(14,0)</span></div>
+  <div class="r hi"><svg class="ic"><use href="#col"/></svg><span class="n">line_total</span><span class="ty">numeric · generated</span></div>
+</div>
+
+<!-- orders -->
+<div class="t" style="left:1360px;top:400px;width:340px">
+  <div class="h"><svg><use href="#tbl"/></svg>orders<span class="sub">1.035.853 dòng</span></div>
+  <div class="r pk"><svg class="ic"><use href="#pk"/></svg><span class="n">id</span><span class="ty">bigserial</span></div>
+  <div class="r pk hi"><svg class="ic"><use href="#pk"/></svg><span class="n">created_at</span><span class="tag">PARTITION · BRIN</span><span class="ty">timestamptz</span></div>
+  <div class="r"><svg class="ic"><use href="#fk"/></svg><span class="n">customer_id</span><span class="ty">int8 → customers</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">status</span><span class="ty">text · CHECK · partial idx</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">subtotal</span><span class="ty">numeric(14,0)</span></div>
+  <div class="r"><svg class="ic"><use href="#req"/></svg><span class="n">shipping_fee</span><span class="ty">numeric(14,0)</span></div>
+  <div class="r hi"><svg class="ic"><use href="#col"/></svg><span class="n">total</span><span class="ty">numeric · generated</span></div>
+  <div class="r"><svg class="ic"><use href="#col"/></svg><span class="n">note</span><span class="ty">text</span></div>
+</div>
+
+<!-- notes -->
+<div class="note" style="left:1360px;top:690px;width:340px">
+  <b>orders</b> = bảng cha, dữ liệu nằm trong <b>37 partition</b><br>
+  <span style="font-family:Menlo,monospace;font-size:12px">orders_2026_01 … orders_2028_10, orders_default</span><br>
+  Hàm <span style="font-family:Menlo,monospace;font-size:12px">ensure_orders_partition()</span> tạo tháng mới.
+</div>
+<div class="note" style="left:960px;top:820px;width:340px">
+  <b>Materialized view</b> (báo cáo tính sẵn)<br>
+  <span style="font-family:Menlo,monospace;font-size:12px">mv_sales_daily · mv_top_products</span><br>
+  <b>Hàm / trigger</b>: place_order(), cancel_order(), notify_low_stock, notify_new_order
+</div>
+
+<!-- relationships -->
+<svg class="l">
+  <defs>
+    <!-- crow's foot (nhiều) -->
+    <marker id="many" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="20" refY="11" orient="auto">
+      <path d="M0 11 L20 11 M8 11 L20 2 M8 11 L20 20" fill="none" stroke="#3b5a9a" stroke-width="1.8"/>
+    </marker>
+    <!-- một -->
+    <marker id="one" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="2" refY="11" orient="auto">
+      <path d="M2 11 L22 11 M9 3 L9 19" fill="none" stroke="#3b5a9a" stroke-width="1.8"/>
+    </marker>
+  </defs>
+  <g fill="none" stroke="#3b5a9a" stroke-width="1.8" marker-start="url(#one)" marker-end="url(#many)">
+    <!-- categories.id -> products.category_id -->
+    <path d="M360 127 H420 V211 H480"/>
+    <!-- products.id -> product_images.product_id -->
+    <path d="M480 341 H420 V493 H360"/>
+    <!-- products.id -> stock_movements.product_id -->
+    <path d="M680 484 V700"/>
+    <!-- products.id -> order_items.product_id -->
+    <path d="M880 107 H920 V685 H960"/>
+    <!-- customers.id -> orders.customer_id -->
+    <path d="M1530 270 V400"/>
+    <!-- orders(id, created_at) -> order_items -->
+    <path d="M1360 460 H1330 V646 H1300"/>
+  </g>
+  <!-- categories tự tham chiếu -->
+  <path d="M360 205 H385 V240 H360" fill="none" stroke="#3b5a9a" stroke-width="1.8" marker-end="url(#many)"/>
+</svg>
+
+<div class="legend">
+  <span><svg width="14" height="14"><use href="#pk"/></svg> khoá chính</span>
+  <span><svg width="14" height="14"><use href="#fk"/></svg> khoá ngoại</span>
+  <span><svg width="14" height="14"><use href="#req"/></svg> NOT NULL</span>
+  <span><svg width="14" height="14"><use href="#col"/></svg> cho phép NULL</span>
+  <span><i style="display:inline-block;width:26px;height:14px;background:#fff6dc;border:1px solid #e6d9a8"></i> cột dùng tính năng PostgreSQL nổi bật</span>
+  <span><svg width="40" height="14"><path d="M0 7 H40 M28 7 L40 1 M28 7 L40 13 M6 1 V13" fill="none" stroke="#3b5a9a" stroke-width="1.6"/></svg> 1 : n</span>
+</div>
+
+</div></body></html>

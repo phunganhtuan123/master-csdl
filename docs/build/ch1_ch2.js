@@ -63,7 +63,7 @@ function chapter2() {
       ], 2, 'Danh sách chức năng và yêu cầu dữ liệu'),
     H2('2.2. Sơ đồ thực thể – quan hệ (ERD)'),
     RP('Lược đồ gồm 8 bảng, chia thành ba nhóm: danh mục – sản phẩm (categories, products, product_images), bán hàng (customers, orders, order_items), vận hành (stock_movements, admins). Các cột tô màu là nơi áp dụng tính năng đặc biệt của PostgreSQL.'),
-    ...figure('erd.jpg', 2, 'Sơ đồ thực thể – quan hệ của hệ thống'),
+    ...figure('erd.jpg', 2, 'Sơ đồ thực thể – quan hệ của hệ thống', 16),
     H2('2.3. Mô tả chi tiết các bảng'),
     H3('2.3.1. Bảng products – sản phẩm'),
     RP('Đây là bảng trung tâm, chứa ba cột đặc biệt: `attributes` (JSONB), `search_vec` (tsvector sinh tự động) và `embedding` (vector 256 chiều).'),

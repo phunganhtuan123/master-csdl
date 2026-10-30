@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #fff; font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; }
+  #c { position: relative; width: 1800px; height: 1000px; background: #fff; overflow: hidden; }
+  .zone { position: absolute; border-radius: 22px; }
+  .zone .zt { position: absolute; top: -16px; left: 28px; background: #fff; padding: 4px 14px; border-radius: 999px; font-size: 17px; font-weight: 700; letter-spacing: .5px; }
+  .node { position: absolute; display: flex; flex-direction: column; align-items: center; text-align: center; width: 240px; }
+  .tile { width: 112px; height: 112px; border-radius: 26px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px rgba(0,0,0,.14); }
+  .tile svg { width: 64px; height: 64px; }
+  .nm { margin-top: 12px; font-size: 21px; font-weight: 700; }
+  .pt { margin-top: 2px; font-size: 14px; color: #666; font-family: Menlo, Consolas, monospace; }
+  .dt { margin-top: 8px; font-size: 14px; color: #333; line-height: 1.35; }
+  .chip { display: inline-block; margin: 3px 2px; padding: 3px 9px; border-radius: 999px; font-size: 12.5px; font-family: Menlo, Consolas, monospace; background: #fff; border: 1px solid #c9c5ee; color: #2A10B4; }
+  svg.lines { position: absolute; inset: 0; width: 1800px; height: 1000px; pointer-events: none; }
+  .lbl { position: absolute; font-size: 13.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #fff; border: 1px solid #e3e3e3; color: #444; white-space: nowrap; transform: translate(-50%, -50%); }
+  .lbl.red { color: #C62828; border-color: #f0c4c4; }
+  .cap { position: absolute; font-size: 13px; color: #777; font-style: italic; }
+</style></head>
+<body><div id="c">
+
+<!-- zones -->
+<div class="zone" style="left:40px;top:70px;width:300px;height:560px;background:#f6f6f6;"><div class="zt" style="color:#555">NGƯỜI DÙNG</div></div>
+<div class="zone" style="left:400px;top:70px;width:1360px;height:560px;background:#eef3fb;border:2px dashed #9db3e0;"><div class="zt" style="color:#2b5fa8;display:flex;align-items:center;gap:8px">{{icon:siDocker:#2496ED:22}} DOCKER COMPOSE — 3 container, 1 lệnh <span style="font-family:Menlo,monospace;font-weight:400">docker compose up -d</span></div></div>
+<div class="zone" style="left:40px;top:690px;width:1720px;height:270px;background:#fbf7ee;"><div class="zt" style="color:#8a6a1b">CÔNG CỤ DEMO & ĐO HIỆU NĂNG — kết nối thẳng vào PostgreSQL :5432</div></div>
+
+<!-- users -->
+<div class="node" style="left:70px;top:130px;">
+  <div class="tile" style="background:#fff;border:3px solid #E65100;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+  </div>
+  <div class="nm">Khách hàng</div>
+  <div class="dt">Trình duyệt · trang bán hàng<br>tìm kiếm · lọc · giỏ hàng · đặt hàng</div>
+</div>
+<div class="node" style="left:70px;top:400px;">
+  <div class="tile" style="background:#fff;border:3px solid #E65100;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#E65100" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/><path d="M17 4l1.2 1.2M19 2l-2 2"/></svg>
+  </div>
+  <div class="nm">Quản trị viên</div>
+  <div class="dt">/admin · đăng nhập JWT<br>dashboard · kho · monitor</div>
+</div>
+
+<!-- web -->
+<div class="node" style="left:470px;top:190px;">
+  <div class="tile" style="background:#111;">{{icon:siNextdotjs:#fff:70}}</div>
+  <div class="nm">Web · Next.js 15</div>
+  <div class="pt">container web · :3000</div>
+  <div class="dt">SSR trang bán hàng<br>Client components cho /admin<br>EventSource nhận SSE</div>
+</div>
+
+<!-- api -->
+<div class="node" style="left:860px;top:190px;">
+  <div class="tile" style="background:#5FA04E;position:relative;">{{icon:siNodedotjs:#fff:70}}
+    <div style="position:absolute;right:-14px;bottom:-14px;width:46px;height:46px;border-radius:12px;background:#fff;border:2px solid #0B7285;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.15)">{{icon:siFastify:#0B7285:26}}</div>
+  </div>
+  <div class="nm">API · Node.js + Fastify</div>
+  <div class="pt">container api · :4000</div>
+  <div class="dt">SQL thuần qua <span style="font-family:Menlo,monospace">pg</span> — không ORM<br>migrate · seed · seed:big · bench<br>LISTEN low_stock, new_order → SSE</div>
+</div>
+
+<!-- db -->
+<div class="node" style="left:1300px;top:160px;width:420px;">
+  <div class="tile" style="background:#336791;width:132px;height:132px;">{{icon:siPostgresql:#fff:84}}</div>
+  <div class="nm">PostgreSQL 16</div>
+  <div class="pt">container db · pgvector/pgvector:pg16 · :5432</div>
+  <div class="dt" style="margin-top:10px;text-align:left;width:380px;">
+    <b>8 bảng</b> · <span style="font-family:Menlo,monospace">orders</span> chia 37 partition theo tháng<br>
+    <b>Cột đặc biệt:</b> JSONB · tsvector (generated) · vector(256)<br>
+    <b>Index:</b> GIN · HNSW · BRIN · partial · covering · expression<br>
+    <b>Logic trong CSDL:</b> place_order() · cancel_order() · trigger NOTIFY<br>
+    <b>Báo cáo:</b> materialized view mv_sales_daily, mv_top_products
+  </div>
+  <div style="margin-top:10px;text-align:left;width:380px;">
+    <span style="font-size:13px;color:#666;">Extension:</span>
+    <span class="chip">pgvector</span><span class="chip">pg_trgm</span><span class="chip">unaccent</span><span class="chip">pg_stat_statements</span>
+  </div>
+</div>
+
+<!-- tools -->
+<div class="node" style="left:110px;top:730px;width:300px;">
+  <div class="tile" style="background:#fff;border:3px solid #8a6a1b;width:92px;height:92px;">{{icon:siDbeaver:#382923:54}}</div>
+  <div class="nm" style="font-size:18px">DBeaver / psql</div>
+  <div class="dt">db/demo/demo_queries.sql<br>8 mục demo · EXPLAIN dạng hình</div>
+</div>
+<div class="node" style="left:620px;top:730px;width:340px;">
+  <div class="tile" style="background:#fff;border:3px solid #8a6a1b;width:92px;height:92px;">{{icon:siNpm:#CB3837:54}}</div>
+  <div class="nm" style="font-size:18px">npm run bench · pgbench</div>
+  <div class="dt">12 kịch bản có/không index × 5 lần (trung vị)<br>50 client đặt hàng cùng lúc → không bán quá kho</div>
+</div>
+<div class="node" style="left:1180px;top:730px;width:340px;">
+  <div class="tile" style="background:#fff;border:3px solid #8a6a1b;width:92px;height:92px;"><svg viewBox="0 0 24 24" fill="none" stroke="#8a6a1b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:52px;height:52px"><path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></svg></div>
+  <div class="nm" style="font-size:18px">Monitor & Benchmark</div>
+  <div class="dt">/admin/monitor · EXPLAIN ANALYZE có/không index<br>pg_stat_statements · kích thước index</div>
+</div>
+
+<!-- lines -->
+<svg class="lines">
+  <defs>
+    <marker id="a" markerUnits="userSpaceOnUse" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto"><path d="M0,0 L16,8 L0,16 z" fill="#555"/></marker>
+    <marker id="ar" markerUnits="userSpaceOnUse" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto"><path d="M0,0 L16,8 L0,16 z" fill="#C62828"/></marker>
+    <marker id="ag" markerUnits="userSpaceOnUse" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto"><path d="M0,0 L16,8 L0,16 z" fill="#8a6a1b"/></marker>
+  </defs>
+  <g fill="none" stroke="#555" stroke-width="3" marker-end="url(#a)">
+    <!-- khách -> web -->
+    <path d="M300 186 H400 Q430 186 430 216 V246 H526"/>
+    <!-- admin -> web -->
+    <path d="M300 456 H400 Q430 456 430 426 V246 H526"/>
+    <!-- web -> api -->
+    <path d="M654 246 H916"/>
+    <!-- api -> db -->
+    <path d="M1044 226 H1436"/>
+  </g>
+  <!-- db -> api NOTIFY (đứt nét đỏ) -->
+  <path d="M1436 264 H1044" fill="none" stroke="#C62828" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#ar)"/>
+  <!-- api -> admin SSE (vòng dưới) -->
+  <path d="M924 292 H850 V600 H345 V500 H312" fill="none" stroke="#C62828" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#ar)"/>
+  <!-- tools -> db -->
+  <g fill="none" stroke="#8a6a1b" stroke-width="3" marker-end="url(#ag)">
+    <path d="M260 724 V700 H1510 V640"/>
+    <path d="M790 724 V700"/>
+    <path d="M1350 724 V700"/>
+  </g>
+</svg>
+
+<!-- labels -->
+<div class="lbl" style="left:350px;top:186px">HTTP</div>
+<div class="lbl" style="left:350px;top:456px">HTTP</div>
+<div class="lbl" style="left:785px;top:246px">REST / JSON</div>
+<div class="lbl" style="left:1240px;top:226px">SQL · pool.query($1, $2)</div>
+<div class="lbl red" style="left:1240px;top:264px">NOTIFY low_stock, new_order</div>
+<div class="lbl red" style="left:660px;top:600px">SSE — cảnh báo sắp hết hàng tới trình duyệt admin &lt; 0,1 s, không F5</div>
+<div class="lbl" style="left:1510px;top:700px;color:#8a6a1b;border-color:#e2d4ae">kết nối thẳng :5432</div>
+
+</div></body></html>
