@@ -78,8 +78,8 @@ const table = (slide, header, rows, x, y, w, colW, fontSize = 14, rowH = 0.5) =>
     header.map((h) => ({ text: h, options: { bold: true, fill: { color: GRAY }, align: 'center' } })),
     ...rows.map((r, i) => r.map((c) => (typeof c === 'string' ? { text: c, options: { fill: { color: i % 2 ? 'F2F2F2' : 'FFFFFF' } } } : { ...c, options: { ...c.options, fill: { color: i % 2 ? 'F2F2F2' : 'FFFFFF' } } }))),
   ], { x, y, w, colW, rowH, fontFace: 'Arial', fontSize, color: INK, border: { type: 'solid', color: '000000', pt: 0.75 }, valign: 'middle', margin: 0.07, objectName: 'table' });
-const SECTIONS = ['Vì sao PostgreSQL', 'Kiến trúc hệ thống', 'Thiết kế CSDL', '6 tính năng nổi bật', 'Demo & benchmark', 'Kết luận'];
-const BAR_TITLES = ['Vì sao chọn PostgreSQL?', 'Kiến trúc hệ thống', 'Thiết kế cơ sở dữ liệu', '6 tính năng nổi bật gắn với nghiệp vụ', 'Ứng dụng, demo và benchmark', 'Kết luận'];
+const SECTIONS = ['Vì sao PostgreSQL', 'Kiến trúc hệ thống', 'Thiết kế CSDL', 'Demo & benchmark', 'Kết luận'];
+const BAR_TITLES = ['Vì sao chọn PostgreSQL?', 'Kiến trúc hệ thống', 'Thiết kế cơ sở dữ liệu', 'Ứng dụng, demo và benchmark', 'Kết luận'];
 /** Slide nội dung. Thanh xanh luôn ghi TÊN PHẦN; nếu slide có tiêu đề riêng thì đưa xuống body
  *  thành tiêu đề phụ (chữ xanh đậm) và nội dung bắt đầu từ Y0 = 1.8 thay vì 1.5. */
 const content = (title, sec) => {
@@ -93,9 +93,9 @@ const content = (title, sec) => {
     T(s, sub, { x: X0 + 0.18, y: 1.38, w: W0 - 0.18, h: 0.38, fontSize: 17, bold: true, color: BLUE, valign: 'middle', fontFace: 'Trebuchet MS', objectName: 'subtitle' });
   }
   if (sec) {
-    const segW = 0.55, gap = 0.06, x0 = 9.9 - 6 * segW - 5 * gap;
+    const N = SECTIONS.length, segW = 0.62, gap = 0.06, x0 = 9.9 - N * segW - (N - 1) * gap;
     SECTIONS.forEach((_, i) => s.addShape(pres.ShapeType.rect, { x: x0 + i * (segW + gap), y: 0.1, w: segW, h: 0.09, fill: { color: i + 1 === sec ? BLUE : (i + 1 < sec ? 'B9B3E6' : 'E1E1E1') }, line: { color: 'FFFFFF', width: 0 }, objectName: 'sec-seg' }));
-    T(s, `PHẦN ${sec}/6 · ${SECTIONS[sec - 1].toUpperCase()}`, { x: x0, y: 0.22, w: 6 * segW + 5 * gap, h: 0.25, fontSize: 10, bold: true, color: BLUE, align: 'right', charSpacing: 1, objectName: 'sec-label' });
+    T(s, `PHẦN ${sec}/${N} · ${SECTIONS[sec - 1].toUpperCase()}`, { x: x0, y: 0.22, w: N * segW + (N - 1) * gap, h: 0.25, fontSize: 10, bold: true, color: BLUE, align: 'right', charSpacing: 1, objectName: 'sec-label' });
   }
   return s;
 };
@@ -116,8 +116,8 @@ T(s, 'GVHD: TS. Lê Thị Ngọc Thảo   ·   Lớp 25SCT41   ·   Tháng 10/20
 
 // ====================================================================== 2. Nội dung
 s = content('Nội dung', 0);
-['Vì sao chọn PostgreSQL', 'Kiến trúc hệ thống', 'Thiết kế CSDL: lược đồ 8 bảng và các loại index', '6 tính năng nổi bật gắn với nghiệp vụ', 'Ứng dụng, demo và benchmark trên 1 triệu đơn hàng', 'Kết luận']
-  .forEach((t, i) => pill(s, i + 1, t, 1.2, 1.65 + i * 0.86, 7.9, 0.66));
+['Vì sao chọn PostgreSQL', 'Kiến trúc hệ thống', 'Thiết kế CSDL: lược đồ 8 bảng · các loại index · 6 tính năng gắn với nghiệp vụ', 'Ứng dụng, demo và benchmark trên 1 triệu đơn hàng', 'Kết luận']
+  .forEach((t, i) => pill(s, i + 1, t, 1.2, 1.7 + i * 1.02, 7.9, 0.78));
 
 // ====================================================================== 3. Vì sao PostgreSQL
 s = content('Vì sao chọn PostgreSQL?', 1);
@@ -159,11 +159,11 @@ s = content('Kiến trúc hệ thống', 2);
 img(s, 'architecture.jpg', X0, 1.7, W0, W0 / 1.877, false);
 
 // ====================================================================== 6. ERD (ảnh docs/diagrams/erd.html → img/erd.jpg, kiểu DBeaver)
-s = content('Thiết kế CSDL: 8 bảng', 3);
+s = content('Lược đồ quan hệ: 8 bảng', 3);
 img(s, 'erd.jpg', X0 + 0.1, Y0, W0 - 0.2, (W0 - 0.2) / 1.698, false);
 
 // ====================================================================== 13. Index khác
-s = content('Thiết kế CSDL: các loại index đặc biệt', 3);
+s = content('Các loại index đặc biệt', 3);
 table(s, ['Loại', 'Trong hệ thống', 'Đo trên 1 triệu đơn'], [
   ['Partial index', { text: 'orders (created_at)\nWHERE status IN (pending, confirmed)', options: { fontFace: 'Courier New', fontSize: 12 } }, '0,2 ms so với 98 ms (480×)\nindex chỉ 17 MB'],
   ['Covering index (INCLUDE)', { text: 'orders (customer_id, created_at)\nINCLUDE (id, status, total)', options: { fontFace: 'Courier New', fontSize: 12 } }, 'Index Only Scan, Heap Fetches = 0\n0,2 ms so với 52 ms (250×)'],
@@ -175,7 +175,7 @@ T(s, 'Mỗi index gắn với đúng 1 truy vấn của ứng dụng. Theo dõi 
 
 // ====================================================================== 7–12. Sáu tính năng: khung 3 vùng
 pres.addSection({ title: '6 tính năng' });
-const feature = (n, title) => content(`${n}. ${title}`, 4);
+const feature = (n, title) => content(`Tính năng ${n}: ${title}`, 3);
 const LX = X0, LW = 5.3, RX = X0 + 5.5, RW = 3.4, TY = 1.8 + 0.7;   // Y0 của slide tính năng = 1.8 (có tiêu đề phụ)   // cột trái/phải dưới dải bài toán
 
 s = feature(1, 'JSONB – thuộc tính sản phẩm linh hoạt');
@@ -303,7 +303,7 @@ img(s, 'slide-notify.jpg', RX, TY + 3.4, RW, 1.15);
 
 // ====================================================================== 14. Ứng dụng
 pres.addSection({ title: 'Ứng dụng & kết quả' });
-s = content('Ứng dụng: trang bán hàng và trang quản trị', 5);
+s = content('Ứng dụng: trang bán hàng và trang quản trị', 4);
 img(s, 'slide-home.jpg', X0, Y0, 4.38, 2.3);
 img(s, 'slide-list.jpg', X0 + 4.52, Y0, 4.38, 2.3);
 img(s, 'slide-dashboard.jpg', X0, Y0 + 2.5, 4.38, 2.3);
@@ -311,7 +311,7 @@ img(s, 'slide-monitor.jpg', X0 + 4.52, Y0 + 2.5, 4.38, 2.3);
 T(s, 'Trang chủ  ·  Lọc theo JSONB  ·  Dashboard (matview + NOTIFY)  ·  Monitor & Benchmark (EXPLAIN có/không index)', { x: X0, y: Y0 + 4.85, w: W0, h: 0.3, fontSize: 13, color: MUTED, align: 'center' });
 
 // ====================================================================== 15. Demo DBeaver
-s = content('Demo trực tiếp bằng DBeaver', 5);
+s = content('Demo trực tiếp bằng DBeaver', 4);
 [
   'JSONB: lọc attributes @> {metal, stone} → GIN index',
   'Full-text “nhan kim cuong 18k” · trigram “nhan kim cuog solitare”',
@@ -327,7 +327,7 @@ T(s, [
 ], { x: X0 + 0.2, y: Y0 + 4.4, w: W0 - 0.4, h: 0.75, fontSize: 12.5, color: INK, valign: 'middle', fontFace: 'Arial', margin: 0, isTextBox: true });
 
 // ====================================================================== 16. Benchmark
-s = content('Benchmark: có index nhanh hơn bao nhiêu?', 5);
+s = content('Benchmark: có index nhanh hơn bao nhiêu?', 4);
 // Biểu đồ vẽ bằng shape (hiển thị giống nhau trên PowerPoint / Keynote / PDF), thang log
 label(s, 'SỐ LẦN NHANH HƠN SO VỚI KHÔNG INDEX (1 TRIỆU ĐƠN, TRUNG VỊ 5 LẦN)', X0, Y0, W0);
 const rows = [
@@ -368,7 +368,7 @@ T(s, [
 
 // ====================================================================== 17. Kết luận
 pres.addSection({ title: 'Kết luận' });
-s = content('Kết luận', 6);
+s = content('Kết luận', 5);
 const concl = [
   ['Một hệ thống thay nhiều hệ thống', 'PostgreSQL = CSDL quan hệ + đa mô hình: thay cho search engine, cache, hàng đợi và vector DB trong phạm vi cửa hàng.', BLUE],
   ['6 tính năng × 6 nghiệp vụ, đều có số đo', 'Trên 1 triệu đơn: nhanh hơn 2,6× – 1.000×; 50 client đồng thời không bán quá kho.', GREEN],
