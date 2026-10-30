@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const { Document, Packer, Paragraph, TextRun, Footer, PageNumber, AlignmentType, NumberFormat, HeadingLevel } = require('docx');
 const H = require('./helpers');
 const { coverPage, reviewPage, termsPage, tocPages, summary, intro } = require('./front');
@@ -46,7 +47,7 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then((buf) => {
-  const out = '/home/claude/jewelry-shop-postgres/docs/TieuLuan_CSDL_Nhom6_PostgreSQL.docx';
+  const out = path.resolve(__dirname, '../TieuLuan_CSDL_Nhom6_PostgreSQL.docx');
   fs.writeFileSync(out, buf);
   console.log('wrote', out, (buf.length / 1024 / 1024).toFixed(1), 'MB');
 });

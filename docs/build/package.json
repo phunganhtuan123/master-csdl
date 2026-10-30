@@ -1,6 +1,13 @@
 {
   "dependencies": {
     "image-size": "^2.0.4",
-    "simple-icons": "^13.0.0"
+    "simple-icons": "^13.0.0",
+    "docx": "^9.7.1",
+    "pptxgenjs": "^4.0.1"
+  },
+  "scripts": {
+    "docx": "node build.js && node build.js pages.json",
+    "slides": "node slides_hutech.js",
+    "diagrams": "node ../diagrams/render.js architecture erd"
   }
 }

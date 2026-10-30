@@ -226,16 +226,27 @@ SELECT * FROM place_order('{"full_name":"B","phone":"0900000002"}', '[{"product_
 SELECT name, qty_sold FROM mv_top_products LIMIT 5;
 SELECT refresh_sales_reports();`),
     H2('Phụ lục C. Cấu trúc mã nguồn'),
-    ...code(`jewelry-shop-postgres/
-├── docker-compose.yml      db + api + web
-├── db/migrations/          001_extensions … 006_reports_matview (SQL thuần, có chú thích)
-├── db/seed/seed.sql        dữ liệu mẫu
-├── db/demo/demo_queries.sql  câu lệnh demo cho DBeaver
-├── db/benchmark/           pgbench: đặt hàng đồng thời, chống bán quá kho
-├── api/src/                server.js, db.js, migrate.js, seed.js, seed-big.js, embed.js, bench.js, routes/
-├── web/app/(shop)/         trang khách hàng
-├── web/app/admin/          trang quản trị
-└── docs/                   tiểu luận, slide, benchmark/bench-report.md`),
+    ...code(`master-csdl/
+├── README.md · COMMANDS.md   hướng dẫn chạy; tổng hợp lệnh deploy, bench, demo
+├── docker-compose.yml        3 container: db · api · web
+├── db/
+│   ├── migrations/           001_extensions … 006_reports_matview (SQL thuần)
+│   ├── seed/seed.sql         dữ liệu mẫu: 40 sản phẩm thật + 3.000 sinh tự động
+│   ├── demo/demo_queries.sql 8 mục demo cho DBeaver
+│   └── benchmark/            pgbench: đặt hàng đồng thời, chống bán quá kho
+├── api/src/                  server, db, migrate, seed, seed-big (1 triệu đơn),
+│   └── routes/               embed, bench (công cụ đo); catalog, search,
+│                             orders, admin, monitor, events
+├── web/
+│   ├── app/(shop)/           trang khách hàng (SSR)
+│   ├── app/admin/            quản trị: dashboard, kho, đơn hàng, monitor
+│   └── components/ · lib/    ProductCard, Header; api.js, cart.js, admin.js
+└── docs/
+    ├── TieuLuan_*.docx/.pdf · Slide_*.pptx/.pdf
+    ├── build/                mã sinh tiểu luận (docx) và slide (pptxgenjs)
+    ├── diagrams/             nguồn sơ đồ kiến trúc, ERD (HTML → PNG)
+    ├── img/                  ảnh màn hình, sơ đồ dùng trong tiểu luận & slide
+    └── benchmark/            bench-report.md / .json (kết quả npm run bench)`),
   ];
 }
 
