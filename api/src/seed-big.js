@@ -31,6 +31,9 @@ async function main() {
 
     // Tắt synchronous_commit cho phiên này để ghi nhanh hơn (chỉ dùng khi seed)
     await client.query('SET synchronous_commit = off');
+    // Tắt trigger "đơn hàng mới" trong lúc nạp dữ liệu lịch sử: nếu không, mỗi đơn bắn 1 pg_notify('new_order')
+    // -> hàng triệu thông báo dồn về API -> SSE -> trình duyệt admin bị đơ. Bật lại ở cuối (kể cả khi lỗi).
+    await client.query('ALTER TABLE orders DISABLE TRIGGER trg_orders_new');
 
     for (const m of months) {
       const ym = m.toISOString().slice(0, 7);
@@ -78,6 +81,7 @@ async function main() {
              pg_size_pretty(pg_total_relation_size('order_items')) AS items_size`);
     console.log(`✔ Xong trong ${((Date.now() - t0) / 1000).toFixed(0)}s:`, c);
   } finally {
+    await client.query('ALTER TABLE orders ENABLE TRIGGER trg_orders_new').catch(() => {});
     client.release();
     await pool.end();
   }
